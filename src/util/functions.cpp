@@ -5,6 +5,7 @@
 #include "functions.h"
 
 #include <iostream>
+#include <fstream>
 
 namespace util {
     void error(const std::string& msg) {
@@ -14,5 +15,29 @@ namespace util {
 
     void report(const Connection* conn, const std::string &msg) {
         std::cout << "[" << conn->getEndpoint() << "] " << msg << std::endl;
+    }
+
+    DBConfig get_config(const std::string& path) {
+
+        std::ifstream config_file(path);
+        std::string line;
+        DBConfig config;
+
+        while (getline(config_file, line)) {
+
+            size_t idx = line.find('=');
+            if (idx == std::string::npos) continue;
+
+            std::string key = line.substr(0, idx);
+            std::string value = line.substr(idx + 1);
+
+            switch (key) {
+                case "DB_SECRET": config.secret = value; break;
+                default: break;
+            }
+
+        }
+
+        return config;
     }
 }

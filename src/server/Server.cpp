@@ -5,6 +5,8 @@
 #include <thread>
 #include <fcntl.h>
 
+#include <sodium.h>
+
 #include "util/functions.h"
 
 int Server::buildSocket(int port) {
@@ -57,6 +59,72 @@ void Server::handleConnection(const Connection *conn) {
 
         std::cout << "[" << conn->getEndpoint() << "] " << "MESSAGE: " << buffer << std::endl;
     }
+}
+
+bool Server::transmit(const Connection *conn, void* buffer, size_t len) {
+
+    size_t offset = 0;
+
+    do {
+
+        auto sent_bytes = send(conn->getSocket(), buffer + offset, len - offset, 0);
+
+        if (sent_bytes == -1) {
+            return false;
+        }
+
+        offset += sent_bytes;
+
+    } while (offset < len);
+
+    return true;
+}
+
+ssize_t Server::receiveBytes(const Connection *conn, void *buffer, size_t len) {
+
+    size_t offset = 0;
+
+    do {
+        auto recv_bytes = recv(conn->getSocket(), buffer + offset, len - offset, 0);
+        if (recv_bytes <= 0) return -1;
+        offset += recv_bytes;
+    } while (offset < len);
+
+    return offset;
+}
+
+bool Server::authenticate(const Connection *conn) {
+
+    uint8_t nonceS[crypto_secretbox_NONCEBYTES];
+    uint8_t nonceC[crypto_secretbox_NONCEBYTES];
+
+    uint8_t response[crypto_auth_hmacsha512_BYTES];
+    uint8_t hash[crypto_auth_hmacsha512_BYTES];
+    uint8_t key[crypto_auth_hmacsha512_KEYBYTES];
+
+    crypto_auth_hmacsha512_state state;
+
+    // Generate nonceS
+    randombytes_buf(nonceS, sizeof(nonceS));
+
+    // Send to client
+    if (!transmit(conn, nonceS, sizeof(nonceS))) {
+        util::report(conn, "AUTHENTICATE FAILED: Could not sent server nonce");
+        return false;
+    }
+
+    // Receive Response from client
+    if ( receiveBytes(conn, response, sizeof(response)) < 0) {
+        util::report(conn, "AUTHENTICATE FAILED: Failed to receive HMAC from client");
+        return false;
+    }
+
+    // Check response against correct hash
+    crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
+
+
+
+
 }
 
 Server::Server(std::atomic<bool>& flag) : Haltable(flag), connection_manager(ConnectionManager()) {}

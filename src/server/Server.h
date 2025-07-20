@@ -10,6 +10,12 @@ class Server : public util::Haltable {
     static int buildSocket(int port);
     void handleConnection(const Connection *conn);
 
+    static bool transmit(const Connection *conn, void *buffer, size_t len);
+
+    static ssize_t receiveBytes(const Connection *conn, void *buffer, size_t len);
+
+    bool authenticate(const Connection *conn);
+
     public:
         Server(std::atomic<bool>& flag);
         ~Server();

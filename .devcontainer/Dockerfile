@@ -5,4 +5,5 @@ RUN apt-get update && apt-get install -y \
     cmake \
     libsodium-dev \
     gdb \
+    git \
     && rm -rf /var/lib/apt/lists/*
