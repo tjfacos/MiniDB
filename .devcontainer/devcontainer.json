@@ -1,0 +1,7 @@
+{
+  "name": "MiniDB-Container",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "root"
+}
