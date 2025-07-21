@@ -8,6 +8,7 @@
 #include <fstream>
 
 namespace util {
+
     void error(const std::string& msg) {
         perror(msg.c_str());
         exit(1);
@@ -20,6 +21,10 @@ namespace util {
     DBConfig get_config(const std::string& path) {
 
         std::ifstream config_file(path);
+        if (!config_file.fail()) {
+            error("Could not open config file at " + path);
+        }
+
         std::string line;
         DBConfig config;
 
@@ -31,13 +36,13 @@ namespace util {
             std::string key = line.substr(0, idx);
             std::string value = line.substr(idx + 1);
 
-            switch (key) {
-                case "DB_SECRET": config.secret = value; break;
-                default: break;
+            if (key == "DB_SECRET") {
+                config.secret = value;
             }
 
         }
 
         return config;
     }
+
 }
