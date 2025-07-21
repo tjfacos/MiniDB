@@ -33,7 +33,15 @@ int Server::buildSocket(int port) {
 void Server::handleConnection(const Connection *conn) {
     // TODO : Capture Messages and Parse
 
-    util::report(conn, "NEW CONNECTION START");
+    util::report(conn, "NEW CONNECTION");
+    util::report(conn, "STARTING HANDSHAKE...");
+
+    if (!authenticate(conn)) {
+        util::report(conn, "AUTHENTICATION FAILED, DISCONNECTING...");
+        return;
+    }
+
+    util::report(conn, "AUTHENTICATION SUCCESSFUL! CONNECTION ESTABLISHED.");
 
     char buffer[1024];
     int sock = conn->getSocket();
@@ -64,10 +72,11 @@ void Server::handleConnection(const Connection *conn) {
 bool Server::transmit(const Connection *conn, void* buffer, size_t len) {
 
     size_t offset = 0;
+    auto* ptr = static_cast<uint8_t *>(buffer);
 
     do {
 
-        auto sent_bytes = send(conn->getSocket(), buffer + offset, len - offset, 0);
+        auto sent_bytes = send(conn->getSocket(), ptr + offset, len - offset, 0);
 
         if (sent_bytes == -1) {
             return false;
@@ -82,10 +91,11 @@ bool Server::transmit(const Connection *conn, void* buffer, size_t len) {
 
 ssize_t Server::receiveBytes(const Connection *conn, void *buffer, size_t len) {
 
-    size_t offset = 0;
+    ssize_t offset = 0;
+    auto* ptr = static_cast<uint8_t *>(buffer);
 
     do {
-        auto recv_bytes = recv(conn->getSocket(), buffer + offset, len - offset, 0);
+        auto recv_bytes = recv(conn->getSocket(), ptr + offset, len - offset, 0);
         if (recv_bytes <= 0) return -1;
         offset += recv_bytes;
     } while (offset < len);
@@ -102,14 +112,25 @@ bool Server::authenticate(const Connection *conn) {
     uint8_t hash[crypto_auth_hmacsha512_BYTES];
     uint8_t key[crypto_auth_hmacsha512_KEYBYTES];
 
-    crypto_auth_hmacsha512_state state;
+    char ack_msg[] = "OK";
+
+    // Securely zero all buffers
+    sodium_memzero(nonceS, sizeof(nonceS));
+    sodium_memzero(nonceC, sizeof(nonceC));
+    sodium_memzero(response, sizeof(response));
+    sodium_memzero(hash, sizeof(hash));
+    sodium_memzero(key, sizeof(key));
+
+    // TODO: Make the DB_SECRET make it to the key buffer
+
+    /* Server -- AUTHENTICATES --> Client */
 
     // Generate nonceS
     randombytes_buf(nonceS, sizeof(nonceS));
 
     // Send to client
     if (!transmit(conn, nonceS, sizeof(nonceS))) {
-        util::report(conn, "AUTHENTICATE FAILED: Could not sent server nonce");
+        util::report(conn, "AUTHENTICATE FAILED: Could not send server nonce");
         return false;
     }
 
@@ -122,17 +143,46 @@ bool Server::authenticate(const Connection *conn) {
     // Check response against correct hash
     crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
 
+    if (sodium_memcmp(response, hash, sizeof(hash)) != 0) {
+        util::report(conn, "AUTHENTICATE FAILED: Hash of server nonce does NOT match client response.");
+        return false;
+    }
+
+    if (!transmit(conn, ack_msg, sizeof(ack_msg))) {
+        util::report(conn, "AUTHENTICATE FAILED: Server failed to send acknowledgement.");
+        return false;
+    }
 
 
+    /* Client -- AUTHENTICATES --> Server */
 
+    // Receive nonceC from client
+    if ( receiveBytes(conn, nonceC, sizeof(nonceC)) < 0) {
+        util::report(conn, "AUTHENTICATE FAILED: Failed to receive client nonce");
+        return false;
+    }
+
+    // Compute hash
+    sodium_memzero(nonceC, sizeof(nonceC));
+    crypto_auth_hmacsha512(hash, nonceC, sizeof(nonceC), key);
+
+    // Return hash to client
+    if (!transmit(conn, hash, sizeof(hash))) {
+        util::report(conn, "AUTHENTICATE FAILED: Could not send server nonce");
+        return false;
+    }
+
+    // Receive OK
+    receiveBytes(conn, ack_msg, sizeof(ack_msg));
+
+    return true;
 }
 
 Server::Server(std::atomic<bool>& flag) : Haltable(flag), connection_manager(ConnectionManager()) {}
 
 Server::~Server() {
-    // Prevent destruction while connections haven't fully closed'
+    // Prevent destruction while connections haven't fully closed
     do { std::this_thread::sleep_for(std::chrono::milliseconds(10)); } while (!connection_manager.empty());
-    std::cout << "ALL CONNECTIONS CLOSED. SHUTTING DOWN SERVER..." << std::endl;
 };
 
 void Server::run(const int port) {

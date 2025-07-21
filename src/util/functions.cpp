@@ -21,7 +21,7 @@ namespace util {
     DBConfig get_config(const std::string& path) {
 
         std::ifstream config_file(path);
-        if (!config_file.fail()) {
+        if (config_file.fail()) {
             error("Could not open config file at " + path);
         }
 

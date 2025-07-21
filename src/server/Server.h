@@ -14,7 +14,7 @@ class Server : public util::Haltable {
 
     static ssize_t receiveBytes(const Connection *conn, void *buffer, size_t len);
 
-    bool authenticate(const Connection *conn);
+    static bool authenticate(const Connection *conn);
 
     public:
         Server(std::atomic<bool>& flag);

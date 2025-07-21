@@ -18,7 +18,7 @@ class Main {
 
     public:
 
-        Main(): is_running(true), server(is_running) {}
+        Main(): is_running(false), server(is_running) {}
 
         ~Main() {
             if (is_running) halt();
@@ -26,11 +26,14 @@ class Main {
         };
 
         void halt() {
+            if (!is_running) return;
             std::cout << std::endl << "CLOSING..." << std::endl;
             is_running = false;
         }
 
         void start(util::DBConfig config) {
+
+            is_running = true;
 
             // Initialise Sodium
             if (sodium_init() < 0)

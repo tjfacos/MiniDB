@@ -17,17 +17,14 @@ add_executable(MiniDB src/main.cpp
 
 include_directories(src/)
 
-
 # Libsodium
-target_include_directories(MiniDB PRIVATE ${SODIUM_INCLUDE_DIRS})
-target_link_libraries(MiniDB PRIVATE ${SODIUM_LIBRARIES})
+target_link_libraries(MiniDB PRIVATE sodium)
 
 # GoogleTest
 include(FetchContent)
 FetchContent_Declare(
-     googletest
-     URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
-# For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
