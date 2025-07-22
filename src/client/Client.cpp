@@ -4,9 +4,10 @@
 #include <cstring>
 
 #include <sodium.h>
+#include <unistd.h>
 
-#include "util/functions.h"
-#include "util/Haltable.h"
+#include "util/logging.h"
+#include "util/networking.h"
 
 namespace MiniDB {
     Client::Client(sockaddr_in server_addr, std::string& secret) : server_addr(server_addr), secret(secret) {}

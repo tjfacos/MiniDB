@@ -6,7 +6,8 @@
 
 #include "client/Client.h"
 #include "server/Server.h"
-#include "util/functions.h"
+#include "util/logging.h"
+#include "util/config.h"
 
 #define DEFAULT_PORT            12345
 #define DEFAULT_CONFIG_PATH     "minidb.conf"

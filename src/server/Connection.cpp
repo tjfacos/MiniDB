@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "util/functions.h"
+#include "util/logging.h"
 
 Connection::Connection(int socket, sockaddr_in addr, socklen_t addrlen)
     : socket(socket), addr(addr), addrlen(addrlen) {}
@@ -37,4 +37,8 @@ int Connection::getPort() const {
 
 std::string Connection::getEndpoint() const {
     return this->getIP() + ":" + std::to_string(this->getPort());
+}
+
+uint8_t* Connection::getSessionKey() const {
+    return const_cast<uint8_t *>(session_key);
 }

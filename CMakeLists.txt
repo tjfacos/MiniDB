@@ -10,12 +10,16 @@ add_executable(MiniDB src/main.cpp
         src/server/Connection.h
         src/server/ConnectionManager.cpp
         src/server/ConnectionManager.h
-        src/util/functions.cpp
-        src/util/functions.h
+        src/util/logging.cpp
+        src/util/logging.h
         src/util/Haltable.cpp
         src/util/Haltable.h
         src/client/Client.cpp
         src/client/Client.h
+        src/util/config.cpp
+        src/util/config.h
+        src/util/networking.cpp
+        src/util/networking.h
 )
 
 include_directories(src/)

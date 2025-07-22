@@ -8,7 +8,8 @@
 
 #include <sodium.h>
 
-#include "util/functions.h"
+#include "util/logging.h"
+#include "util/networking.h"
 
 int Server::buildSocket(int port) {
 
@@ -154,6 +155,23 @@ bool Server::authenticate(const Connection *conn) const {
         util::report(conn, "AUTHENTICATE FAILED: Client could not authenticate server");
         return false;
     }
+
+
+    /* Key Generation and Secure Clean-up */
+
+    uint8_t session_key_seed[sizeof(nonceS) + sizeof(nonceC)];
+    std::copy_n(nonceS, sizeof(nonceS), session_key_seed);
+    std::copy_n(nonceC, sizeof(nonceC), session_key_seed + sizeof(nonceC));
+
+    crypto_auth_hmacsha512(conn->getSessionKey(), session_key_seed, sizeof(session_key_seed), key);
+
+    sodium_memzero(nonceS           , sizeof(nonceS             ));
+    sodium_memzero(nonceC           , sizeof(nonceC             ));
+    sodium_memzero(response         , sizeof(response           ));
+    sodium_memzero(hash             , sizeof(hash               ));
+    sodium_memzero(key              , sizeof(key                ));
+    sodium_memzero(ack_msg          , sizeof(ack_msg            ));
+    sodium_memzero(session_key_seed , sizeof(session_key_seed   ));
 
     return true;
 }
