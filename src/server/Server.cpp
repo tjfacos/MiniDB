@@ -1,5 +1,6 @@
 #include "Server.h"
 
+#include <cstring>
 #include <iostream>
 #include <strings.h>
 #include <thread>
@@ -103,7 +104,7 @@ ssize_t Server::receiveBytes(const Connection *conn, void *buffer, size_t len) {
     return offset;
 }
 
-bool Server::authenticate(const Connection *conn) {
+bool Server::authenticate(const Connection *conn) const {
 
     uint8_t nonceS[crypto_secretbox_NONCEBYTES];
     uint8_t nonceC[crypto_secretbox_NONCEBYTES];
@@ -121,7 +122,8 @@ bool Server::authenticate(const Connection *conn) {
     sodium_memzero(hash, sizeof(hash));
     sodium_memzero(key, sizeof(key));
 
-    // TODO: Make the DB_SECRET make it to the key buffer
+    // Transfer db secret to key buffer
+    memcpy(key, secret, sizeof(secret));
 
     /* Server -- AUTHENTICATES --> Client */
 
@@ -178,15 +180,22 @@ bool Server::authenticate(const Connection *conn) {
     return true;
 }
 
-Server::Server(std::atomic<bool>& flag) : Haltable(flag), connection_manager(ConnectionManager()) {}
+Server::Server(std::atomic<bool>& flag) : Haltable(flag), connection_manager(ConnectionManager()), secret{} {}
 
 Server::~Server() {
     // Prevent destruction while connections haven't fully closed
     do { std::this_thread::sleep_for(std::chrono::milliseconds(10)); } while (!connection_manager.empty());
 };
 
+void Server::setSecret(const std::string &secret) {
+    memcpy(this->secret, secret.data(), crypto_auth_hmacsha512_KEYBYTES);
+}
+
 void Server::run(const int port) {
     int socket = buildSocket(port);
+
+    // TODO Remove
+    std::cout << "Server Secret :: " << secret << " (l: " << sizeof(secret) << ")" << std::endl;
 
     // Make listen socket non-blocking
     int flags = fcntl(socket, F_GETFL, 0);

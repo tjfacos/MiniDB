@@ -39,8 +39,8 @@ class Main {
             if (sodium_init() < 0)
                 util::error("ERROR: Failed to initialize libsodium.");
 
-            // TODO: Remove this
-            std::cout << "DB_SECRET: " << config.secret << std::endl;
+            // Set server secret
+            server.setSecret(config.secret);
 
             // Start Server
             std::cout << "Starting server..." << std::endl;
