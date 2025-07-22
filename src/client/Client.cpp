@@ -13,14 +13,15 @@ namespace MiniDB {
 
     Client::~Client() = default;
 
-    void Client::run()
+    void Client::test()
     {
-        socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (socket < 0) {
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+
+        if (sock < 0) {
             util::error("CLIENT: Failed to create socket");
         }
 
-        if (connect(socket, reinterpret_cast<struct sockaddr*>(&server_addr), sizeof(server_addr)) < 0) {
+        if (connect(sock, reinterpret_cast<struct sockaddr*>(&server_addr), sizeof(server_addr)) < 0) {
             util::error("CLIENT: Failed to connect to server");
         }
 
@@ -29,9 +30,9 @@ namespace MiniDB {
         }
 
         char msg[] = "Hello, World!";
-        util::sendBytes(socket, msg, strlen(msg));
+        util::sendBytes(sock, msg, strlen(msg));
 
-        close(socket);
+        close(sock);
     }
 
     bool Client::authenticate()
@@ -44,7 +45,9 @@ namespace MiniDB {
         uint8_t hash[crypto_auth_hmacsha512_BYTES];
         uint8_t key[crypto_auth_hmacsha512_KEYBYTES];
 
-        char ack_msg[] = "OK";
+        char ack_msg[3];
+        char ack_success[] = "OK";
+        char ack_failure[] = "NO";
 
         // Securely zero all buffers
         sodium_memzero(nonceC, sizeof(nonceC));
@@ -59,7 +62,7 @@ namespace MiniDB {
         /* Server -- AUTHENTICATES --> Client */
 
         // Receive nonceS from server
-        if (util::receiveBytes(socket, nonceS, sizeof(nonceS)) < 0) {
+        if (util::receiveBytes(sock, nonceS, sizeof(nonceS)) < 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive server nonce", true);
             return false;
         }
@@ -68,14 +71,17 @@ namespace MiniDB {
         crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
 
         // Return hash to server
-        if (!util::sendBytes(socket, hash, sizeof(hash))) {
+        if (!util::sendBytes(sock, hash, sizeof(hash))) {
             util::report(nullptr, "AUTHENTICATE FAILED: Could not send HMAC to server", true);
             return false;
         }
 
-        // Receive OK
-        util::receiveBytes(socket, ack_msg, sizeof(ack_msg));
-
+        // Receive Acknowledgement
+        util::receiveBytes(sock, ack_msg, sizeof(ack_msg));
+        if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
+            util::report(nullptr, "AUTHENTICATE FAILED: Server could not authenticate client. DB_SECRET is wrong!", true);
+            return false;
+        }
 
         /* Client -- AUTHENTICATES --> Server */
 
@@ -83,29 +89,37 @@ namespace MiniDB {
         randombytes_buf(nonceC, sizeof(nonceC));
 
         // Send to server
-        if (!util::sendBytes(socket, nonceC, sizeof(nonceC))) {
+        if (!util::sendBytes(sock, nonceC, sizeof(nonceC))) {
             util::report(nullptr, "AUTHENTICATE FAILED: Could not send client nonce", true);
             return false;
         }
 
         // Receive Response from server
-        if ( util::receiveBytes(socket, response, sizeof(response)) < 0) {
+        if ( util::receiveBytes(sock, response, sizeof(response)) < 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive HMAC from server", true);
             return false;
         }
 
         // Check response against correct hash
         crypto_auth_hmacsha512(hash, nonceC, sizeof(nonceC), key);
-
         if (sodium_memcmp(response, hash, sizeof(hash)) != 0) {
+
+            // Send Failure to Server
             util::report(nullptr, "AUTHENTICATE FAILED: Client HMAC does NOT match server response.", true);
+            if (!util::sendBytes(sock, ack_failure, sizeof(ack_failure)))
+                util::report(nullptr, "Failed to send failure acknowledgement to server", true);
             return false;
+
+        } else {
+
+            // Send Success Acknowledgement
+            if (!util::sendBytes(sock, ack_msg, sizeof(ack_msg))) {
+                util::report(nullptr, "AUTHENTICATE FAILED: Client failed to send acknowledgement.", true);
+                return false;
+            }
+
         }
 
-        if (!util::sendBytes(socket, ack_msg, sizeof(ack_msg))) {
-            util::report(nullptr, "AUTHENTICATE FAILED: Client failed to send acknowledgement.", true);
-            return false;
-        }
 
         return true;
     }

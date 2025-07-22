@@ -79,7 +79,10 @@ bool Server::authenticate(const Connection *conn) const {
     uint8_t hash[crypto_auth_hmacsha512_BYTES];
     uint8_t key[crypto_auth_hmacsha512_KEYBYTES];
 
-    char ack_msg[] = "OK";
+    char ack_msg[3];
+
+    char ack_success[] = "OK";
+    char ack_failure[] = "NO";
 
     // Securely zero all buffers
     sodium_memzero(nonceS, sizeof(nonceS));
@@ -110,17 +113,23 @@ bool Server::authenticate(const Connection *conn) const {
 
     // Check response against correct hash
     crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
-
     if (sodium_memcmp(response, hash, sizeof(hash)) != 0) {
+
+        // Send Failure Acknowledgement to client
         util::report(conn, "AUTHENTICATE FAILED: Hash of server nonce does NOT match client response.");
+        if (!util::sendBytes(conn->getSocket(), ack_failure, sizeof(ack_failure)))
+            util::report(conn, "Failed to send failure acknowledgement to client");
         return false;
-    }
 
-    if (!util::sendBytes(conn->getSocket(), ack_msg, sizeof(ack_msg))) {
-        util::report(conn, "AUTHENTICATE FAILED: Server failed to send acknowledgement.");
-        return false;
-    }
+    } else {
 
+        // Send Success Acknowledgement
+        if (!util::sendBytes(conn->getSocket(), ack_success, sizeof(ack_success))) {
+            util::report(conn, "AUTHENTICATE FAILED: Server failed to send acknowledgement.");
+            return false;
+        }
+
+    }
 
     /* Client -- AUTHENTICATES --> Server */
 
@@ -139,8 +148,12 @@ bool Server::authenticate(const Connection *conn) const {
         return false;
     }
 
-    // Receive OK
+    // Receive Acknowledgement
     util::receiveBytes(conn->getSocket(), ack_msg, sizeof(ack_msg));
+    if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
+        util::report(conn, "AUTHENTICATE FAILED: Client could not authenticate server");
+        return false;
+    }
 
     return true;
 }
@@ -160,7 +173,7 @@ void Server::run(const int port) {
     int socket = buildSocket(port);
 
     // TODO Remove
-    std::cout << "Server Secret :: " << secret << " (l: " << sizeof(secret) << ")" << std::endl;
+    // std::cout << "Server Secret :: " << secret << " (l: " << sizeof(secret) << ")" << std::endl;
 
     // Make listen socket non-blocking
     int flags = fcntl(socket, F_GETFL, 0);

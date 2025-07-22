@@ -15,18 +15,10 @@ add_executable(MiniDB src/main.cpp
         src/util/Haltable.cpp
         src/util/Haltable.h
         src/client/Client.cpp
-        src/client/Client.h)
+        src/client/Client.h
+)
 
 include_directories(src/)
 
 # Libsodium
 target_link_libraries(MiniDB PRIVATE sodium)
-
-# GoogleTest
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)

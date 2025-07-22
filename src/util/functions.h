@@ -15,7 +15,7 @@ namespace util {
     };
 
     void error(const std::string& msg);
-    void report(const Connection* conn = nullptr, const std::string &msg, bool client = false);
+    void report(const Connection* conn = nullptr, const std::string &msg = "", bool client = false);
 
     DBConfig get_config(const std::string& path);
 
