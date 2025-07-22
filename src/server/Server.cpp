@@ -101,13 +101,13 @@ bool Server::authenticate(const Connection *conn) const {
     randombytes_buf(nonceS, sizeof(nonceS));
 
     // Send to client
-    if (!util::sendBytes(conn->getSocket(), nonceS, sizeof(nonceS))) {
+    if (!util::sendRaw(conn->getSocket(), nonceS, sizeof(nonceS))) {
         util::report(conn, "AUTHENTICATE FAILED: Could not send server nonce");
         return false;
     }
 
     // Receive Response from client
-    if (util::receiveBytes(conn->getSocket(), response, sizeof(response)) < 0) {
+    if (util::receiveRaw(conn->getSocket(), response, sizeof(response)) < 0) {
         util::report(conn, "AUTHENTICATE FAILED: Failed to receive HMAC from client");
         return false;
     }
@@ -118,14 +118,14 @@ bool Server::authenticate(const Connection *conn) const {
 
         // Send Failure Acknowledgement to client
         util::report(conn, "AUTHENTICATE FAILED: Hash of server nonce does NOT match client response.");
-        if (!util::sendBytes(conn->getSocket(), ack_failure, sizeof(ack_failure)))
+        if (!util::sendRaw(conn->getSocket(), ack_failure, sizeof(ack_failure)))
             util::report(conn, "Failed to send failure acknowledgement to client");
         return false;
 
     } else {
 
         // Send Success Acknowledgement
-        if (!util::sendBytes(conn->getSocket(), ack_success, sizeof(ack_success))) {
+        if (!util::sendRaw(conn->getSocket(), ack_success, sizeof(ack_success))) {
             util::report(conn, "AUTHENTICATE FAILED: Server failed to send acknowledgement.");
             return false;
         }
@@ -135,7 +135,7 @@ bool Server::authenticate(const Connection *conn) const {
     /* Client -- AUTHENTICATES --> Server */
 
     // Receive nonceC from client
-    if (util::receiveBytes(conn->getSocket(), nonceC, sizeof(nonceC)) < 0) {
+    if (util::receiveRaw(conn->getSocket(), nonceC, sizeof(nonceC)) < 0) {
         util::report(conn, "AUTHENTICATE FAILED: Failed to receive client nonce");
         return false;
     }
@@ -144,13 +144,13 @@ bool Server::authenticate(const Connection *conn) const {
     crypto_auth_hmacsha512(hash, nonceC, sizeof(nonceC), key);
 
     // Return hash to client
-    if (!util::sendBytes(conn->getSocket(), hash, sizeof(hash))) {
+    if (!util::sendRaw(conn->getSocket(), hash, sizeof(hash))) {
         util::report(conn, "AUTHENTICATE FAILED: Could not send HMAC to client");
         return false;
     }
 
     // Receive Acknowledgement
-    util::receiveBytes(conn->getSocket(), ack_msg, sizeof(ack_msg));
+    util::receiveRaw(conn->getSocket(), ack_msg, sizeof(ack_msg));
     if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
         util::report(conn, "AUTHENTICATE FAILED: Client could not authenticate server");
         return false;
@@ -160,8 +160,8 @@ bool Server::authenticate(const Connection *conn) const {
     /* Key Generation and Secure Clean-up */
 
     uint8_t session_key_seed[sizeof(nonceS) + sizeof(nonceC)];
-    std::copy_n(nonceS, sizeof(nonceS), session_key_seed);
-    std::copy_n(nonceC, sizeof(nonceC), session_key_seed + sizeof(nonceC));
+    std::memcpy(session_key_seed, nonceS, sizeof(nonceS));
+    std::memcpy(session_key_seed + sizeof(nonceS), nonceC, sizeof(nonceC));
 
     crypto_auth_hmacsha512(conn->getSessionKey(), session_key_seed, sizeof(session_key_seed), key);
 
@@ -172,6 +172,8 @@ bool Server::authenticate(const Connection *conn) const {
     sodium_memzero(key              , sizeof(key                ));
     sodium_memzero(ack_msg          , sizeof(ack_msg            ));
     sodium_memzero(session_key_seed , sizeof(session_key_seed   ));
+
+    util::report(conn, reinterpret_cast<char *>(conn->getSessionKey()));
 
     return true;
 }

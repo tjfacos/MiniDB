@@ -8,6 +8,7 @@
 #include "server/Server.h"
 #include "util/logging.h"
 #include "util/config.h"
+#include "util/networking.h"
 
 #define DEFAULT_PORT            12345
 #define DEFAULT_CONFIG_PATH     "minidb.conf"
@@ -60,7 +61,7 @@ void handle_close_signal(int sig) {
     m.halt();
 }
 
-void testHandshake(std::string secret) {
+void testClient(std::string secret) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1000 ));
 
@@ -107,7 +108,7 @@ int main(int argc, char* argv[]) {
 
     // Start Server and Client
     std::thread server_thread{&Main::start, &m, config};
-    std::thread client_thread{testHandshake, config.secret};
+    std::thread client_thread{testClient, config.secret};
 
     client_thread.join();
     server_thread.join();

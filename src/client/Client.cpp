@@ -31,7 +31,7 @@ namespace MiniDB {
         }
 
         char msg[] = "Hello, World!";
-        util::sendBytes(sock, msg, strlen(msg));
+        util::sendRaw(sock, msg, strlen(msg));
 
         close(sock);
     }
@@ -63,7 +63,7 @@ namespace MiniDB {
         /* Server -- AUTHENTICATES --> Client */
 
         // Receive nonceS from server
-        if (util::receiveBytes(sock, nonceS, sizeof(nonceS)) < 0) {
+        if (util::receiveRaw(sock, nonceS, sizeof(nonceS)) < 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive server nonce", true);
             return false;
         }
@@ -72,13 +72,13 @@ namespace MiniDB {
         crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
 
         // Return hash to server
-        if (!util::sendBytes(sock, hash, sizeof(hash))) {
+        if (!util::sendRaw(sock, hash, sizeof(hash))) {
             util::report(nullptr, "AUTHENTICATE FAILED: Could not send HMAC to server", true);
             return false;
         }
 
         // Receive Acknowledgement
-        util::receiveBytes(sock, ack_msg, sizeof(ack_msg));
+        util::receiveRaw(sock, ack_msg, sizeof(ack_msg));
         if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Server could not authenticate client. DB_SECRET is wrong!", true);
             return false;
@@ -90,13 +90,13 @@ namespace MiniDB {
         randombytes_buf(nonceC, sizeof(nonceC));
 
         // Send to server
-        if (!util::sendBytes(sock, nonceC, sizeof(nonceC))) {
+        if (!util::sendRaw(sock, nonceC, sizeof(nonceC))) {
             util::report(nullptr, "AUTHENTICATE FAILED: Could not send client nonce", true);
             return false;
         }
 
         // Receive Response from server
-        if ( util::receiveBytes(sock, response, sizeof(response)) < 0) {
+        if ( util::receiveRaw(sock, response, sizeof(response)) < 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive HMAC from server", true);
             return false;
         }
@@ -107,20 +107,37 @@ namespace MiniDB {
 
             // Send Failure to Server
             util::report(nullptr, "AUTHENTICATE FAILED: Client HMAC does NOT match server response.", true);
-            if (!util::sendBytes(sock, ack_failure, sizeof(ack_failure)))
+            if (!util::sendRaw(sock, ack_failure, sizeof(ack_failure)))
                 util::report(nullptr, "Failed to send failure acknowledgement to server", true);
             return false;
 
         } else {
 
             // Send Success Acknowledgement
-            if (!util::sendBytes(sock, ack_msg, sizeof(ack_msg))) {
+            if (!util::sendRaw(sock, ack_msg, sizeof(ack_msg))) {
                 util::report(nullptr, "AUTHENTICATE FAILED: Client failed to send acknowledgement.", true);
                 return false;
             }
 
         }
 
+        /* Key Generation and Secure Clean-up */
+
+        uint8_t session_key_seed[sizeof(nonceS) + sizeof(nonceC)];
+        std::copy_n(nonceS, sizeof(nonceS), session_key_seed);
+        std::copy_n(nonceC, sizeof(nonceC), session_key_seed + sizeof(nonceC));
+
+        crypto_auth_hmacsha512(session_key, session_key_seed, sizeof(session_key_seed), key);
+
+        sodium_memzero(nonceS           , sizeof(nonceS             ));
+        sodium_memzero(nonceC           , sizeof(nonceC             ));
+        sodium_memzero(response         , sizeof(response           ));
+        sodium_memzero(hash             , sizeof(hash               ));
+        sodium_memzero(key              , sizeof(key                ));
+        sodium_memzero(ack_msg          , sizeof(ack_msg            ));
+        sodium_memzero(session_key_seed , sizeof(session_key_seed   ));
+
+        util::report(nullptr, reinterpret_cast<char *>(session_key), true);
 
         return true;
     }

@@ -3,7 +3,7 @@
 #define CLIENT_H
 #include <string>
 #include <netinet/in.h>
-#include <sys/types.h>
+#include <sodium.h>
 
 /* NOTE: If we use this class as part of the public API,
  * I need to make the socket cross--platform (reed, bugger
@@ -17,7 +17,7 @@ class Client {
 
     sockaddr_in server_addr ;
     std::string secret      ;
-    std::string session_key ;
+    uint8_t session_key[crypto_auth_hmacsha512_BYTES] ;
     int sock;
 
     public:
