@@ -13,7 +13,9 @@ add_executable(MiniDB src/main.cpp
         src/util/functions.cpp
         src/util/functions.h
         src/util/Haltable.cpp
-        src/util/Haltable.h)
+        src/util/Haltable.h
+        src/client/Client.cpp
+        src/client/Client.h)
 
 include_directories(src/)
 

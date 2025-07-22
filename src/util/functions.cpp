@@ -14,8 +14,14 @@ namespace util {
         exit(1);
     }
 
-    void report(const Connection* conn, const std::string &msg) {
-        std::cout << "[" << conn->getEndpoint() << "] " << msg << std::endl;
+    void report(const Connection* conn = nullptr, const std::string &msg, bool client = false) {
+        if (conn) {
+            std::cout << "[" << conn->getEndpoint() << "] " << msg << std::endl;
+        } else if (client) {
+            std::cout << "[CLIENT] " << msg << std::endl;
+        } else {
+            std::cout << "[SERVER] " << msg << std::endl;
+        }
     }
 
     DBConfig get_config(const std::string& path) {
@@ -43,6 +49,40 @@ namespace util {
         }
 
         return config;
+    }
+
+    bool sendBytes(int sock, void* buffer, size_t len) {
+
+        size_t offset = 0;
+        auto* ptr = static_cast<uint8_t *>(buffer);
+
+        do {
+
+            auto sent_bytes = send(sock, ptr + offset, len - offset, 0);
+
+            if (sent_bytes == -1) {
+                return false;
+            }
+
+            offset += sent_bytes;
+
+        } while (offset < len);
+
+        return true;
+    }
+
+    ssize_t receiveBytes(int sock, void *buffer, size_t len) {
+
+        ssize_t offset = 0;
+        auto* ptr = static_cast<uint8_t *>(buffer);
+
+        do {
+            auto recv_bytes = recv(sock, ptr + offset, len - offset, 0);
+            if (recv_bytes <= 0) return -1;
+            offset += recv_bytes;
+        } while (offset < len);
+
+        return offset;
     }
 
 }
