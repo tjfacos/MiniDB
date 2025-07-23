@@ -78,7 +78,7 @@ namespace util {
         return offset;
     }
 
-    bool sendEncrypted(const Connection *conn, void *buffer, const uint16_t len, uint8_t session_key[]) {
+    bool sendEncrypted(const Connection *conn, void *buffer, const uint16_t len) {
 
         uint8_t header  [MIMP_HEADER_BYTES              ];
         uint8_t payload [crypto_secretbox_MACBYTES + len];
@@ -103,7 +103,7 @@ namespace util {
         memcpy(header + 4, nonce, crypto_secretbox_NONCEBYTES);
 
         // Encrypt message into payload
-        crypto_secretbox_easy(payload, static_cast<uint8_t *>(buffer), len, nonce, session_key);
+        crypto_secretbox_easy(payload, static_cast<uint8_t *>(buffer), len, nonce, conn->sessionKey());
 
         // Assemble whole message (header || payload)
         uint8_t message_buffer[sizeof(header) + sizeof(payload)];
@@ -114,7 +114,7 @@ namespace util {
         return sendRaw(conn, message_buffer, sizeof(message_buffer));
     }
 
-    std::vector<uint8_t>* receiveEncrypted(const Connection *conn, uint8_t session_key[]) {
+    std::vector<uint8_t>* receiveEncrypted(const Connection *conn) {
 
         uint8_t temp[DEFAULT_BUFFER_SIZE];
         std::vector<uint8_t> msg_buffer;
@@ -165,7 +165,7 @@ namespace util {
 
         // Decrypt message
         uint8_t plaintext[data_len - crypto_secretbox_MACBYTES];
-        if (crypto_secretbox_open_easy(plaintext, ciphertext, data_len, nonce, session_key) != 0) {
+        if (crypto_secretbox_open_easy(plaintext, ciphertext, data_len, nonce, conn->sessionKey()) != 0) {
             std::cout << "Forged message detected! Dropping..." << std::endl;
             return nullptr;
         }

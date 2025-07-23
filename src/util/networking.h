@@ -15,8 +15,8 @@ namespace util {
     bool    sendRaw     (const Connection *conn, void* buffer, size_t len);
     ssize_t receiveRaw  (const Connection *conn, void *buffer, size_t min_len);
 
-    bool                    sendEncrypted   (const Connection *conn, void *buffer, uint16_t len, uint8_t session_key[]);
-    std::vector<uint8_t>*   receiveEncrypted(const Connection *conn, uint8_t session_key[]);
+    bool                    sendEncrypted   (const Connection *conn, void *buffer, uint16_t len);
+    std::vector<uint8_t>*   receiveEncrypted(const Connection *conn);
 
 }
 

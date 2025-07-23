@@ -10,21 +10,21 @@
 #include "util/networking.h"
 
 namespace MiniDB {
-    Client::Client(sockaddr_in server_addr, std::string& secret) : server_addr(server_addr), secret(secret) {}
+    Client::Client(sockaddr_in server_addr, std::string& secret) : secret(secret) {
+        const int sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock < 0) {
+            util::error("CLIENT: Failed to create socket");
+        }
+        conn = new Connection(sock, server_addr, sizeof(server_addr));
+    }
 
     Client::~Client() {
-        close(sock);
+        delete conn;
     };
 
     void Client::connectToServer()
     {
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-
-        if (sock < 0) {
-            util::error("CLIENT: Failed to create socket");
-        }
-
-        if (connect(sock, reinterpret_cast<struct sockaddr*>(&server_addr), sizeof(server_addr)) < 0) {
+        if (connect(conn->getSocket(), reinterpret_cast<struct sockaddr *>(&conn->getAddr()), conn->getAddrLen()) < 0) {
             util::error("CLIENT: Failed to connect to server");
         }
 
@@ -60,7 +60,7 @@ namespace MiniDB {
         /* Server -- AUTHENTICATES --> Client */
 
         // Receive nonceS from server
-        if (util::receiveRaw(sock, nonceS, sizeof(nonceS)) < 0) {
+        if (util::receiveRaw(conn, nonceS, sizeof(nonceS)) < 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive server nonce", true);
             return false;
         }
@@ -69,13 +69,13 @@ namespace MiniDB {
         crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
 
         // Return hash to server
-        if (!util::sendRaw(sock, hash, sizeof(hash))) {
+        if (!util::sendRaw(conn, hash, sizeof(hash))) {
             util::report(nullptr, "AUTHENTICATE FAILED: Could not send HMAC to server", true);
             return false;
         }
 
         // Receive Acknowledgement
-        util::receiveRaw(sock, ack_msg, sizeof(ack_msg));
+        util::receiveRaw(conn, ack_msg, sizeof(ack_msg));
         if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Server could not authenticate client. DB_SECRET is wrong!", true);
             return false;
@@ -87,13 +87,13 @@ namespace MiniDB {
         randombytes_buf(nonceC, sizeof(nonceC));
 
         // Send to server
-        if (!util::sendRaw(sock, nonceC, sizeof(nonceC))) {
+        if (!util::sendRaw(conn, nonceC, sizeof(nonceC))) {
             util::report(nullptr, "AUTHENTICATE FAILED: Could not send client nonce", true);
             return false;
         }
 
         // Receive Response from server
-        if ( util::receiveRaw(sock, response, sizeof(response)) < 0) {
+        if ( util::receiveRaw(conn, response, sizeof(response)) < 0) {
             util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive HMAC from server", true);
             return false;
         }
@@ -104,14 +104,14 @@ namespace MiniDB {
 
             // Send Failure to Server
             util::report(nullptr, "AUTHENTICATE FAILED: Client HMAC does NOT match server response.", true);
-            if (!util::sendRaw(sock, ack_failure, sizeof(ack_failure)))
+            if (!util::sendRaw(conn, ack_failure, sizeof(ack_failure)))
                 util::report(nullptr, "Failed to send failure acknowledgement to server", true);
             return false;
 
         } else {
 
             // Send Success Acknowledgement
-            if (!util::sendRaw(sock, ack_msg, sizeof(ack_msg))) {
+            if (!util::sendRaw(conn, ack_msg, sizeof(ack_msg))) {
                 util::report(nullptr, "AUTHENTICATE FAILED: Client failed to send acknowledgement.", true);
                 return false;
             }
@@ -124,7 +124,7 @@ namespace MiniDB {
         std::copy_n(nonceS, sizeof(nonceS), session_key_seed);
         std::copy_n(nonceC, sizeof(nonceC), session_key_seed + sizeof(nonceC));
 
-        crypto_auth_hmacsha512(session_key, session_key_seed, sizeof(session_key_seed), key);
+        crypto_auth_hmacsha512(conn->sessionKey(), session_key_seed, sizeof(session_key_seed), key);
 
         sodium_memzero(nonceS           , sizeof(nonceS             ));
         sodium_memzero(nonceC           , sizeof(nonceC             ));
@@ -134,19 +134,17 @@ namespace MiniDB {
         sodium_memzero(ack_msg          , sizeof(ack_msg            ));
         sodium_memzero(session_key_seed , sizeof(session_key_seed   ));
 
-        util::report(nullptr, reinterpret_cast<char *>(session_key), true);
-
         return true;
     }
 
-    void Client::send_message(std::string msg) {
+    void Client::send_message(std::string msg) const {
         char buffer[msg.size() + 1];
         memcpy(buffer, msg.data(), msg.size() + 1);
-        util::sendEncrypted(sock, buffer, sizeof(buffer), session_key);
+        util::sendEncrypted(conn, buffer, sizeof(buffer));
     }
 
-    std::string Client::recv_message() {
-        std::vector<uint8_t>* msg = util::receiveEncrypted(sock, session_key);
+    std::string Client::recv_message() const {
+        std::vector<uint8_t>* msg = util::receiveEncrypted(conn);
         return std::string{msg->begin(), msg->end()};
     }
 
