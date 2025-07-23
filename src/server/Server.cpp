@@ -48,26 +48,21 @@ void Server::handleConnection(const Connection *conn) {
 
     while (this->isRunning()) {
 
-        std::vector<uint8_t> plaintext;
+        // Get message from client
+        std::vector<uint8_t>* msg = util::receiveEncrypted(conn);
 
-        bzero(buffer, 1024);
-        auto num_bytes = recv(sock, buffer, sizeof(buffer), MSG_DONTWAIT);
-
-        if (num_bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            continue;
-        }
-
-        if (num_bytes == 0) {
+        // Check for a null message
+        if (msg == nullptr && util::net_errno == MIMP_DISCONNECT) {
             util::report(conn, "CONNECTION CLOSED GRACEFULLY.");
             return;
         }
 
-        if (num_bytes < 0) {
+        if (msg == nullptr) {
             util::error("Failed to receive message.");
+            return;
         }
 
-        std::cout << "[" << conn->getEndpoint() << "] " << "MESSAGE: " << buffer << std::endl;
+        std::cout << "[" << conn->getEndpoint() << "] " << "MESSAGE: " << reinterpret_cast<char *>(msg->data()) << std::endl;
     }
 }
 
@@ -172,8 +167,6 @@ bool Server::authenticate(const Connection *conn) const {
     sodium_memzero(key              , sizeof(key                ));
     sodium_memzero(ack_msg          , sizeof(ack_msg            ));
     sodium_memzero(session_key_seed , sizeof(session_key_seed   ));
-
-    util::report(conn, reinterpret_cast<char *>(conn->sessionKey()));
 
     return true;
 }

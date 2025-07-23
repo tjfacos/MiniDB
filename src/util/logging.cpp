@@ -14,14 +14,9 @@ namespace util {
         exit(1);
     }
 
-    void report(const Connection* conn, const std::string &msg, bool client) {
-        if (conn) {
-            std::cout << "[" << conn->getEndpoint() << "] " << msg << std::endl;
-        } else if (client) {
-            std::cout << "[CLIENT] " << msg << std::endl;
-        } else {
-            std::cout << "[SERVER] " << msg << std::endl;
-        }
+    void report(const Connection* conn, const std::string &msg) {
+        if (!conn) error("NO CONNECTION IN REPORT");
+        else std::cout << "[" << conn->getEndpoint() << "] " << msg << std::endl;
     }
 
 

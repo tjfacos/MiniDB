@@ -10,7 +10,10 @@
 
 #include "Connection.h"
 
+#define MIMP_DISCONNECT     2001
+
 namespace util {
+    inline int net_errno;
 
     bool    sendRaw     (const Connection *conn, void* buffer, size_t len);
     ssize_t receiveRaw  (const Connection *conn, void *buffer, size_t min_len);

@@ -24,7 +24,8 @@ namespace MiniDB {
 
     void Client::connectToServer()
     {
-        if (connect(conn->getSocket(), reinterpret_cast<struct sockaddr *>(&conn->getAddr()), conn->getAddrLen()) < 0) {
+        const struct sockaddr_in server_addr = conn->getAddr();
+        if (connect(conn->getSocket(), reinterpret_cast<const struct sockaddr*>(&server_addr), conn->getAddrLen()) < 0) {
             util::error("CLIENT: Failed to connect to server");
         }
 
@@ -61,7 +62,7 @@ namespace MiniDB {
 
         // Receive nonceS from server
         if (util::receiveRaw(conn, nonceS, sizeof(nonceS)) < 0) {
-            util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive server nonce", true);
+            util::report(conn, "AUTHENTICATE FAILED: Failed to receive server nonce");
             return false;
         }
 
@@ -70,14 +71,14 @@ namespace MiniDB {
 
         // Return hash to server
         if (!util::sendRaw(conn, hash, sizeof(hash))) {
-            util::report(nullptr, "AUTHENTICATE FAILED: Could not send HMAC to server", true);
+            util::report(conn, "AUTHENTICATE FAILED: Could not send HMAC to server");
             return false;
         }
 
         // Receive Acknowledgement
         util::receiveRaw(conn, ack_msg, sizeof(ack_msg));
         if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
-            util::report(nullptr, "AUTHENTICATE FAILED: Server could not authenticate client. DB_SECRET is wrong!", true);
+            util::report(conn, "AUTHENTICATE FAILED: Server could not authenticate client. DB_SECRET is wrong!");
             return false;
         }
 
@@ -88,13 +89,13 @@ namespace MiniDB {
 
         // Send to server
         if (!util::sendRaw(conn, nonceC, sizeof(nonceC))) {
-            util::report(nullptr, "AUTHENTICATE FAILED: Could not send client nonce", true);
+            util::report(conn, "AUTHENTICATE FAILED: Could not send client nonce");
             return false;
         }
 
         // Receive Response from server
         if ( util::receiveRaw(conn, response, sizeof(response)) < 0) {
-            util::report(nullptr, "AUTHENTICATE FAILED: Failed to receive HMAC from server", true);
+            util::report(conn, "AUTHENTICATE FAILED: Failed to receive HMAC from server");
             return false;
         }
 
@@ -103,16 +104,16 @@ namespace MiniDB {
         if (sodium_memcmp(response, hash, sizeof(hash)) != 0) {
 
             // Send Failure to Server
-            util::report(nullptr, "AUTHENTICATE FAILED: Client HMAC does NOT match server response.", true);
+            util::report(conn, "AUTHENTICATE FAILED: Client HMAC does NOT match server response.");
             if (!util::sendRaw(conn, ack_failure, sizeof(ack_failure)))
-                util::report(nullptr, "Failed to send failure acknowledgement to server", true);
+                util::report(conn, "Failed to send failure acknowledgement to server");
             return false;
 
         } else {
 
             // Send Success Acknowledgement
             if (!util::sendRaw(conn, ack_msg, sizeof(ack_msg))) {
-                util::report(nullptr, "AUTHENTICATE FAILED: Client failed to send acknowledgement.", true);
+                util::report(conn, "AUTHENTICATE FAILED: Client failed to send acknowledgement.");
                 return false;
             }
 

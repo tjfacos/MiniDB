@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sodium.h>
+#include <thread>
 #include <vector>
 #include <vector>
 
@@ -20,11 +21,7 @@
 
 #define DEFAULT_BUFFER_SIZE 4096
 
-#define MIMP_DISCONNECT     2001
-
 namespace util {
-
-    int net_errno;
 
     bool sendRaw(const Connection *conn, void* buffer, size_t len) {
 
@@ -57,7 +54,8 @@ namespace util {
 
             auto recv_bytes = recv(conn->getSocket(), ptr + offset, min_len - offset, MSG_DONTWAIT);
 
-            if (recv_bytes == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            if (recv_bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
             }
 
