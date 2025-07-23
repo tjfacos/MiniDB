@@ -46,7 +46,7 @@ namespace util {
         return true;
     }
 
-    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t max_to_return) {
+    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t bytes_to_return) {
 
         ssize_t offset = 0;
         auto* ptr = static_cast<uint8_t *>(buffer);
@@ -54,7 +54,8 @@ namespace util {
         do {
 
 
-            auto recv_bytes = recv(conn->getSocket(), ptr + offset, max_to_return - offset, MSG_DONTWAIT);
+            auto recv_bytes
+                = recv(conn->getSocket(), ptr + offset, bytes_to_return - offset, MSG_DONTWAIT);
 
             if (recv_bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -74,7 +75,7 @@ namespace util {
 
             offset += recv_bytes;
 
-        } while (offset < max_to_return);
+        } while (offset < bytes_to_return);
 
         report(conn, "Read from socket for [" + conn->getEndpoint() + "] successful! Read " + std::to_string(offset) + " bytes.");
 
