@@ -20,18 +20,24 @@
 
 #define DEFAULT_BUFFER_SIZE 4096
 
+#define MIMP_DISCONNECT     2001
+
 namespace util {
 
-    bool sendRaw(int sock, void* buffer, size_t len) {
+    int net_errno;
+
+    bool sendRaw(const Connection *conn, void* buffer, size_t len) {
 
         size_t offset = 0;
         auto* ptr = static_cast<uint8_t *>(buffer);
 
         do {
 
-            auto sent_bytes = send(sock, ptr + offset, len - offset, 0);
+            auto sent_bytes = send(conn->getSocket(), ptr + offset, len - offset, 0);
 
+            // Stop if send didn't work
             if (sent_bytes == -1) {
+                net_errno = errno;
                 return false;
             }
 
@@ -42,21 +48,37 @@ namespace util {
         return true;
     }
 
-    ssize_t receiveRaw(int sock, void *buffer, size_t min_len) {
+    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t min_len) {
 
         ssize_t offset = 0;
         auto* ptr = static_cast<uint8_t *>(buffer);
 
         do {
-            auto recv_bytes = recv(sock, ptr + offset, min_len - offset, 0);
-            if (recv_bytes <= 0) return -1;
+
+            auto recv_bytes = recv(conn->getSocket(), ptr + offset, min_len - offset, MSG_DONTWAIT);
+
+            if (recv_bytes == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                continue;
+            }
+
+            if (recv_bytes == 0) {
+                net_errno = MIMP_DISCONNECT;
+                return 0;
+            };
+
+            if (recv_bytes == -1) {
+                net_errno = errno;
+                return -1;
+            }
+
             offset += recv_bytes;
+
         } while (offset < min_len);
 
         return offset;
     }
 
-    bool sendEncrypted(int sock, void *buffer, const uint16_t len, uint8_t session_key[]) {
+    bool sendEncrypted(const Connection *conn, void *buffer, const uint16_t len, uint8_t session_key[]) {
 
         uint8_t header  [MIMP_HEADER_BYTES              ];
         uint8_t payload [crypto_secretbox_MACBYTES + len];
@@ -89,10 +111,10 @@ namespace util {
         memcpy(message_buffer + sizeof(header), payload, sizeof(payload));
 
         // Send message to client
-        return sendRaw(sock, message_buffer, sizeof(message_buffer));
+        return sendRaw(conn, message_buffer, sizeof(message_buffer));
     }
 
-    ssize_t receiveEncrypted(int sock, void *buffer, uint8_t session_key[]) {
+    std::vector<uint8_t>* receiveEncrypted(const Connection *conn, uint8_t session_key[]) {
 
         uint8_t temp[DEFAULT_BUFFER_SIZE];
         std::vector<uint8_t> msg_buffer;
@@ -105,8 +127,8 @@ namespace util {
         do {
 
             // Receive bytes from socket
-            ssize_t recv_bytes = receiveRaw(sock, temp, 0);
-            if (recv_bytes <= 0) return -1;
+            ssize_t recv_bytes = receiveRaw(conn, temp, 0);
+            if (recv_bytes <= 0) return nullptr;
 
             // Add those bytes to the overall message buffer
             received_bytes += recv_bytes;
@@ -123,8 +145,8 @@ namespace util {
         while (received_bytes < msg_buffer.size()) {
 
             // Receive bytes from socket
-            ssize_t recv_bytes = receiveRaw(sock, temp, 0);
-            if (recv_bytes <= 0) return -1;
+            ssize_t recv_bytes = receiveRaw(conn, temp, 0);
+            if (recv_bytes <= 0) return nullptr;
 
             // Add those bytes to the overall message buffer
             received_bytes += recv_bytes;
@@ -145,12 +167,13 @@ namespace util {
         uint8_t plaintext[data_len - crypto_secretbox_MACBYTES];
         if (crypto_secretbox_open_easy(plaintext, ciphertext, data_len, nonce, session_key) != 0) {
             std::cout << "Forged message detected! Dropping..." << std::endl;
-            return -1;
+            return nullptr;
         }
 
-        // Set return buffer
-        memcpy(buffer, plaintext, sizeof(plaintext));
-        return sizeof(plaintext);
+        // Return plaintext as vector
+        auto* return_buffer = new std::vector<uint8_t>(sizeof(plaintext));
+        memcpy(return_buffer->data(), plaintext, sizeof(plaintext));
+        return return_buffer;
 
     }
 }

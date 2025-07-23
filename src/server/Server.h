@@ -18,7 +18,7 @@ class Server : public util::Haltable {
     bool authenticate(const Connection *conn) const;
 
     public:
-        Server(std::atomic<bool>& flag);
+        explicit Server(std::atomic<bool>& flag);
         ~Server();
         void setSecret(const std::string &secret);
         void run(int port);

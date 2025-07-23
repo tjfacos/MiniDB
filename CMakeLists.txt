@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(MiniDB src/main.cpp
         src/server/Server.cpp
         src/server/Server.h
-        src/server/Connection.cpp
-        src/server/Connection.h
+        src/util/Connection.cpp
+        src/util/Connection.h
         src/server/ConnectionManager.cpp
         src/server/ConnectionManager.h
         src/util/logging.cpp

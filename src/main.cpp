@@ -74,11 +74,10 @@ void testClient(std::string secret) {
     addr.sin_port = htons(DEFAULT_PORT);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    // std::string wrong_secret = "TheWrongSecret!!!";
-
     MiniDB::Client client{addr, secret};
-    client.test();
+    client.connectToServer();
 
+    client.send_message("This is a test!");
 }
 
 int main(int argc, char* argv[]) {

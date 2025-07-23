@@ -6,7 +6,7 @@
 #define UTIL_H
 #include <string>
 
-#include "server/Connection.h"
+#include "Connection.h"
 
 namespace util {
     void error(const std::string& msg);

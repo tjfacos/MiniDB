@@ -12,9 +12,11 @@
 namespace MiniDB {
     Client::Client(sockaddr_in server_addr, std::string& secret) : server_addr(server_addr), secret(secret) {}
 
-    Client::~Client() = default;
+    Client::~Client() {
+        close(sock);
+    };
 
-    void Client::test()
+    void Client::connectToServer()
     {
         sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -29,11 +31,6 @@ namespace MiniDB {
         if (!authenticate()) {
             util::error("CLIENT: Failed to authenticate");
         }
-
-        char msg[] = "Hello, World!";
-        util::sendRaw(sock, msg, strlen(msg));
-
-        close(sock);
     }
 
     bool Client::authenticate()
@@ -142,14 +139,15 @@ namespace MiniDB {
         return true;
     }
 
-    // ssize_t Client::send_message(void* buffer, size_t length)
-    // {
-    //     send(socket, buffer, length, 0);
-    // }
-    //
-    // uint8_t* Client::recv_message()
-    // {
-    //     // TODO Implement Message Protocol (see NOTES.md)
-    //     return nullptr;
-    // }
-} // MiniDB
+    void Client::send_message(std::string msg) {
+        char buffer[msg.size() + 1];
+        memcpy(buffer, msg.data(), msg.size() + 1);
+        util::sendEncrypted(sock, buffer, sizeof(buffer), session_key);
+    }
+
+    std::string Client::recv_message() {
+        std::vector<uint8_t>* msg = util::receiveEncrypted(sock, session_key);
+        return std::string{msg->begin(), msg->end()};
+    }
+
+}

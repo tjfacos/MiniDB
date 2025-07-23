@@ -23,10 +23,10 @@ class Client {
     public:
         Client(sockaddr_in server_addr, std::string& secret);
         ~Client();
-        void test();
+        void connectToServer();
         bool authenticate();
-        // ssize_t     send_message(void* buffer, size_t length);
-        // uint8_t*    recv_message();
+        void        send_message(std::string msg);
+        std::string recv_message();
 };
 
 } // MiniDB
