@@ -106,10 +106,10 @@ int main(int argc, char* argv[]) {
     util::DBConfig config = util::get_config(config_file_path);
 
     // Start Server and Client
-    std::thread server_thread{&Main::start, &m, config};
+    std::thread db_thread{&Main::start, &m, config};
     std::thread client_thread{testClient, config.secret};
 
     client_thread.join();
-    server_thread.join();
+    db_thread.join();
 
 }

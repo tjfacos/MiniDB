@@ -11,7 +11,6 @@
 #include <sodium.h>
 #include <thread>
 #include <vector>
-#include <vector>
 
 #include "logging.h"
 
@@ -30,10 +29,12 @@ namespace util {
 
         do {
 
+
             auto sent_bytes = send(conn->getSocket(), ptr + offset, len - offset, 0);
 
             // Stop if send didn't work
             if (sent_bytes == -1) {
+                report(conn, "Send failed! Oh bugger...");
                 net_errno = errno;
                 return false;
             }
@@ -45,14 +46,15 @@ namespace util {
         return true;
     }
 
-    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t min_len) {
+    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t max_to_return) {
 
         ssize_t offset = 0;
         auto* ptr = static_cast<uint8_t *>(buffer);
 
         do {
 
-            auto recv_bytes = recv(conn->getSocket(), ptr + offset, min_len - offset, MSG_DONTWAIT);
+
+            auto recv_bytes = recv(conn->getSocket(), ptr + offset, max_to_return - offset, MSG_DONTWAIT);
 
             if (recv_bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -65,13 +67,16 @@ namespace util {
             };
 
             if (recv_bytes == -1) {
+                report(conn, "receiveRaw: an unknown error has occurred.");
                 net_errno = errno;
                 return -1;
             }
 
             offset += recv_bytes;
 
-        } while (offset < min_len);
+        } while (offset < max_to_return);
+
+        report(conn, "Read from socket for [" + conn->getEndpoint() + "] successful! Read " + std::to_string(offset) + " bytes.");
 
         return offset;
     }
@@ -108,62 +113,46 @@ namespace util {
         memcpy(message_buffer, header, sizeof(header));
         memcpy(message_buffer + sizeof(header), payload, sizeof(payload));
 
+        report(conn, "================ SENDING MIMP MESSAGE ================");
+        report(conn, "Plaintext message size: " + std::to_string(len));
+        report(conn, "Payload Size: " + std::to_string(final_data_len) + " bytes (Encoded value: " + std::to_string(header[2] << 8 | header[3]) + ")");
+        report(conn, "Total message size (Payload + Header): " + std::to_string(sizeof(message_buffer)));
+        report(conn, "================ SENDING MIMP MESSAGE ================");
+
         // Send message to client
         return sendRaw(conn, message_buffer, sizeof(message_buffer));
     }
 
     std::vector<uint8_t>* receiveEncrypted(const Connection *conn) {
 
-        uint8_t temp[DEFAULT_BUFFER_SIZE];
-        std::vector<uint8_t> msg_buffer;
-        size_t received_bytes = 0;
+        // Temp buffer for header
+        ssize_t recv_bytes;
+        uint8_t header_buff[MIMP_HEADER_BYTES];
+        sodium_memzero(header_buff, sizeof(header_buff));
 
-        // Zero temp buffer
-        sodium_memzero(temp, sizeof(temp));
-
-        // Get (at least) the header
-        do {
-
-            // Receive bytes from socket
-            ssize_t recv_bytes = receiveRaw(conn, temp, 0);
-            if (recv_bytes <= 0) return nullptr;
-
-            // Add those bytes to the overall message buffer
-            received_bytes += recv_bytes;
-            msg_buffer.resize(msg_buffer.size() + received_bytes);
-            memcpy(msg_buffer.data() + received_bytes, temp, recv_bytes);
-
-        } while (received_bytes < MIMP_HEADER_BYTES);
+        // Get the header
+        recv_bytes = receiveRaw(conn, header_buff, MIMP_HEADER_BYTES);
+        if (recv_bytes <= 0) return nullptr;
 
         // Calculate the size of the message data
-        uint16_t data_len = msg_buffer[2] << 8 | msg_buffer[3];
-        msg_buffer.resize(MIMP_HEADER_BYTES + data_len);
+        uint16_t data_len = header_buff[2] << 8 | header_buff[3];
 
-        // Continue to receive
-        while (received_bytes < msg_buffer.size()) {
+        // Temp buffer for payload
+        uint8_t payload_buff[data_len];
+        sodium_memzero(payload_buff, sizeof(payload_buff));
 
-            // Receive bytes from socket
-            ssize_t recv_bytes = receiveRaw(conn, temp, 0);
-            if (recv_bytes <= 0) return nullptr;
-
-            // Add those bytes to the overall message buffer
-            received_bytes += recv_bytes;
-            msg_buffer.resize(msg_buffer.size() + received_bytes);
-            memcpy(msg_buffer.data() + received_bytes, temp, recv_bytes);
-
-        }
+        // Get the payload
+        recv_bytes = receiveRaw(conn, payload_buff, sizeof(payload_buff));
+        if (recv_bytes <= 0) return nullptr;
 
         // Place nonce into a separate buffer
         uint8_t nonce[crypto_secretbox_NONCEBYTES];
-        memcpy(nonce, msg_buffer.data() + 4, crypto_secretbox_NONCEBYTES);
+        memcpy(nonce, header_buff + 4, crypto_secretbox_NONCEBYTES);
 
-        // Place ciphertext into a separate buffer
-        uint8_t ciphertext[data_len];
-        memcpy(ciphertext, msg_buffer.data() + MIMP_HEADER_BYTES, data_len);
-
-        // Decrypt message
-        uint8_t plaintext[data_len - crypto_secretbox_MACBYTES];
-        if (crypto_secretbox_open_easy(plaintext, ciphertext, data_len, nonce, conn->sessionKey()) != 0) {
+        // Decrypt payload
+        uint16_t plaintext_len = data_len - crypto_secretbox_MACBYTES;
+        uint8_t plaintext[plaintext_len];
+        if (crypto_secretbox_open_easy(plaintext, payload_buff, data_len, nonce, conn->sessionKey()) != 0) {
             std::cout << "Forged message detected! Dropping..." << std::endl;
             return nullptr;
         }

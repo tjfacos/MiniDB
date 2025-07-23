@@ -4,9 +4,7 @@ MiniDB Project Notes
 ---
 # TODO
 
-1) Function to read config file is written (util::get_config). Use this + cli arguments (see main) to read config, and load DB_SECRET to Server.
-2) Use DB_SECRET to complete the authentication method and message encryption
-3) Use GoogleTest to write a test client (in test directory), that performs the other side of the handshake, and tries to send and receive messages
+1) Move all constants pertaining to MIMP to a separate header file (to go into some sort of library later)
 
 ---
 # Authentication

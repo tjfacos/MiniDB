@@ -24,7 +24,11 @@ class Client {
         ~Client();
         void connectToServer();
         bool authenticate();
-        void        send_message(std::string msg) const;
+
+    void AwaitServerReady() const;
+    void AwaitServerAcknowledgement() const;
+
+    void            send_message(std::string msg) const;
         std::string recv_message() const;
 };
 

@@ -34,6 +34,9 @@ int Server::buildSocket(int port) {
 
 void Server::handleConnection(const Connection *conn) {
 
+    char READY_ACK[]    = "READY";
+    char RECEIVED_ACK[] = "RECEIVED";
+
     util::report(conn, "NEW CONNECTION! STARTING HANDSHAKE...");
 
     if (!authenticate(conn)) {
@@ -48,6 +51,10 @@ void Server::handleConnection(const Connection *conn) {
 
     while (this->isRunning()) {
 
+        // Send Ready Signal
+        util::sendRaw(conn, READY_ACK, sizeof(READY_ACK));
+        util::report(conn, "Ready to receive traffic...");
+
         // Get message from client
         std::vector<uint8_t>* msg = util::receiveEncrypted(conn);
 
@@ -61,6 +68,10 @@ void Server::handleConnection(const Connection *conn) {
             util::error("Failed to receive message.");
             return;
         }
+
+        // Send acknowledge signal
+        util::sendRaw(conn, RECEIVED_ACK, sizeof(RECEIVED_ACK));
+        util::report(conn, "Traffic Received and Acknowledged...");
 
         std::cout << "[" << conn->getEndpoint() << "] " << "MESSAGE: " << reinterpret_cast<char *>(msg->data()) << std::endl;
     }
@@ -184,9 +195,6 @@ void Server::setSecret(const std::string &secret) {
 
 void Server::run(const int port) {
     int socket = buildSocket(port);
-
-    // TODO Remove
-    // std::cout << "Server Secret :: " << secret << " (l: " << sizeof(secret) << ")" << std::endl;
 
     // Make listen socket non-blocking
     int flags = fcntl(socket, F_GETFL, 0);

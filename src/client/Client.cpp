@@ -138,10 +138,41 @@ namespace MiniDB {
         return true;
     }
 
+    void Client::AwaitServerReady() const {
+
+        char msg[6];
+        char expected[] = "READY";
+
+        util::receiveRaw(conn, msg, sizeof(msg));
+
+        if (memcmp(msg, expected, sizeof(msg)) == 0) {
+            util::report(conn, "Server sent READY Signal, preparing to send traffic...");
+        }
+    }
+
+    void Client::AwaitServerAcknowledgement() const {
+
+        char msg[9];
+        char expected[] = "RECEIVED";
+
+        util::receiveRaw(conn, msg, sizeof(msg));
+
+        if (memcmp(msg, expected, sizeof(msg)) == 0) {
+            util::report(conn, "Server sent RECEIVED Signal, traffic delivered...");
+        }
+    }
+
     void Client::send_message(std::string msg) const {
+
+        AwaitServerReady();
+
         char buffer[msg.size() + 1];
         memcpy(buffer, msg.data(), msg.size() + 1);
+
         util::sendEncrypted(conn, buffer, sizeof(buffer));
+
+        AwaitServerAcknowledgement();
+
     }
 
     std::string Client::recv_message() const {
