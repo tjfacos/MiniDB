@@ -6,8 +6,8 @@
 #include <sodium.h>
 #include <unistd.h>
 
-#include "util/logging.h"
-#include "util/networking.h"
+#include "common/util/logging.h"
+#include "common/util/networking.h"
 
 namespace MiniDB {
     Client::Client(sockaddr_in server_addr, std::string& secret) : secret(secret) {

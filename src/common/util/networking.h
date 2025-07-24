@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "Connection.h"
+#include "common/Connection.h"
 
 #define MIMP_DISCONNECT     2001
 

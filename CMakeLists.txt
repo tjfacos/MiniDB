@@ -4,7 +4,6 @@ project(MiniDB)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(src/)
-include_directories(src/common)
 
 # Common Library
 add_library(MiniDB_common STATIC

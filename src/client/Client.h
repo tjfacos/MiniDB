@@ -1,10 +1,11 @@
 
 #ifndef CLIENT_H
 #define CLIENT_H
+
 #include <string>
 #include <netinet/in.h>
 
-#include "../common/Connection.h"
+#include "common/Connection.h"
 
 /* NOTE: If we use this class as part of the public API,
  * I need to make the socket cross--platform (reed, bugger
