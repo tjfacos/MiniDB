@@ -1,7 +1,3 @@
-//
-// Created by tjfacos on 19/07/25.
-//
-
 #include "ConnectionManager.h"
 
 ConnectionManager::ConnectionManager() = default;

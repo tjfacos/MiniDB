@@ -9,7 +9,8 @@
 #include <sodium.h>
 
 #include "util/logging.h"
-#include "../common/messaging/networking.h"
+#include "util/networking.h"
+#include "Haltable.h"
 
 int Server::buildSocket(int port) {
 

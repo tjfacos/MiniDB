@@ -1,9 +1,6 @@
-//
-// Created by tjfacos on 19/07/25.
-//
-
 #ifndef HALTABLE_H
 #define HALTABLE_H
+
 #include <atomic>
 
 namespace util {

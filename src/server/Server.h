@@ -4,7 +4,7 @@
 #include <sodium.h>
 
 #include "ConnectionManager.h"
-#include "util/Haltable.h"
+#include "Haltable.h"
 
 class Server : public util::Haltable {
 

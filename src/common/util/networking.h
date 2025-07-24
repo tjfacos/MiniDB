@@ -6,7 +6,6 @@
 #define NETWORKING_H
 
 #include <vector>
-#include <sys/types.h>
 
 #include "Connection.h"
 

@@ -3,26 +3,40 @@ project(MiniDB)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(MiniDB src/main.cpp
-        src/server/Server.cpp
-        src/server/Server.h
-        src/common/Connection.cpp
+include_directories(src/)
+include_directories(src/common)
+
+# Common Library
+add_library(MiniDB_common STATIC
         src/common/Connection.h
-        src/server/ConnectionManager.cpp
-        src/server/ConnectionManager.h
-        src/common/util/logging.cpp
-        src/common/util/logging.h
-        src/common/Haltable.cpp
+        src/common/Connection.cpp
         src/common/Haltable.h
-        src/client/Client.cpp
-        src/client/Client.h
-        src/common/util/config.cpp
+        src/common/Haltable.cpp
         src/common/util/config.h
-        src/common/messaging/networking.cpp
-        src/common/messaging/networking.h
+        src/common/util/config.cpp
+        src/common/util/logging.h
+        src/common/util/logging.cpp
+        src/common/util/networking.h
+        src/common/util/networking.cpp
+        src/common/constants.h
 )
 
-include_directories(src/)
+target_link_libraries(MiniDB_common PRIVATE sodium)
 
-# Libsodium
-target_link_libraries(MiniDB PRIVATE sodium)
+# Database application
+add_executable(MiniDB_server
+        src/server/main.cpp
+        src/server/Server.h
+        src/server/Server.cpp
+)
+
+target_link_libraries(MiniDB_server PRIVATE MINIDB_common sodium)
+
+# Client application
+add_executable(MiniDB_client
+        src/client/main.cpp
+        src/client/Client.h
+        src/client/Client.cpp
+)
+
+target_link_libraries(MiniDB_client PRIVATE MINIDB_common sodium)

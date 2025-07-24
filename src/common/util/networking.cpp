@@ -12,7 +12,7 @@
 #include <thread>
 #include <vector>
 
-#include "../../util/logging.h"
+#include "util/logging.h"
 
 #define MIMP_HEADER_BYTES   (4 + crypto_secretbox_NONCEBYTES)
 #define MIMP_MAGIC_BYTE     0xDB
