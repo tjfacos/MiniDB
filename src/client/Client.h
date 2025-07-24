@@ -4,7 +4,7 @@
 #include <string>
 #include <netinet/in.h>
 
-#include "util/Connection.h"
+#include "../common/Connection.h"
 
 /* NOTE: If we use this class as part of the public API,
  * I need to make the socket cross--platform (reed, bugger

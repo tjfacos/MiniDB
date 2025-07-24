@@ -9,7 +9,7 @@
 #include <sodium.h>
 
 #include "util/logging.h"
-#include "util/networking.h"
+#include "../common/messaging/networking.h"
 
 int Server::buildSocket(int port) {
 

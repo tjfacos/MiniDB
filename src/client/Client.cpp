@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #include "util/logging.h"
-#include "util/networking.h"
+#include "../common/messaging/networking.h"
 
 namespace MiniDB {
     Client::Client(sockaddr_in server_addr, std::string& secret) : secret(secret) {

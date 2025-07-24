@@ -6,20 +6,20 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(MiniDB src/main.cpp
         src/server/Server.cpp
         src/server/Server.h
-        src/util/Connection.cpp
-        src/util/Connection.h
+        src/common/Connection.cpp
+        src/common/Connection.h
         src/server/ConnectionManager.cpp
         src/server/ConnectionManager.h
-        src/util/logging.cpp
-        src/util/logging.h
-        src/util/Haltable.cpp
-        src/util/Haltable.h
+        src/common/util/logging.cpp
+        src/common/util/logging.h
+        src/common/Haltable.cpp
+        src/common/Haltable.h
         src/client/Client.cpp
         src/client/Client.h
-        src/util/config.cpp
-        src/util/config.h
-        src/util/networking.cpp
-        src/util/networking.h
+        src/common/util/config.cpp
+        src/common/util/config.h
+        src/common/messaging/networking.cpp
+        src/common/messaging/networking.h
 )
 
 include_directories(src/)
