@@ -65,7 +65,8 @@ void Server::handleConnection(const Connection *conn) {
         }
 
         if (msg == nullptr) {
-            util::error("Failed to receive message.");
+            util::report(conn, "UNKNOWN ERROR: Failed to receive message; " + std::string(strerror(util::net_errno)));
+            util::report(conn, "Killing connection");
             return;
         }
 

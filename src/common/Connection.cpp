@@ -10,6 +10,7 @@ Connection::Connection(int socket, sockaddr_in addr, socklen_t addrlen)
 
 Connection::~Connection() {
     util::report(this, "Closing...");
+    shutdown(socket, SHUT_RDWR);
     close(socket);
 }
 
