@@ -29,7 +29,7 @@ namespace util {
 
         do {
 
-            if (!carry_on) {
+            if (!carry_on || !connectionIsAlive(conn)) {
                 net_errno = MIMP_DISCONNECT;
                 return false;
             }
@@ -170,6 +170,18 @@ namespace util {
         auto* return_buffer = new std::vector<uint8_t>(sizeof(plaintext));
         memcpy(return_buffer->data(), plaintext, sizeof(plaintext));
         return return_buffer;
+
+    }
+
+    bool connectionIsAlive(const Connection *conn) {
+
+        char buff;
+        ssize_t bytes = recv(conn->getSocket(), &buff, 1, MSG_PEEK | MSG_DONTWAIT);
+
+        if (bytes > 0 || bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            return true;
+
+        return false;
 
     }
 }

@@ -162,6 +162,13 @@ namespace MiniDB {
 
         if (memcmp(msg, expected, sizeof(msg)) == 0) {
             util::report(conn, "Server sent RECEIVED Signal, traffic delivered...");
+        } else {
+            if (util::net_errno == MIMP_DISCONNECT) {
+                util::report(conn, "Server disconnected");
+                running = false;
+            } else {
+                util::error("UNKNOWN ERROR: Acknowledgement not received from server.");
+            }
         }
     }
 
@@ -172,7 +179,17 @@ namespace MiniDB {
         char buffer[msg.size() + 1];
         memcpy(buffer, msg.data(), msg.size() + 1);
 
-        util::sendEncrypted(conn, buffer, sizeof(buffer), running);
+        if (!util::sendEncrypted(conn, buffer, sizeof(buffer), running)) {
+
+            if (util::net_errno == MIMP_DISCONNECT) {
+                util::report(conn, "Server disconnected gracefully, disconnecting...");
+                running = false;
+                return;
+            }
+
+            util::error("UNKNOWN ERROR");
+
+        }
 
         AwaitServerAcknowledgement();
 
