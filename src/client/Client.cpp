@@ -10,7 +10,8 @@
 #include "common/util/networking.h"
 
 namespace MiniDB {
-    Client::Client(sockaddr_in server_addr, std::string& secret) : secret(secret) {
+
+    Client::Client(sockaddr_in server_addr, std::string& secret, std::atomic<bool>& is_running) : Haltable(is_running), secret(secret) {
         const int sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0) {
             util::error("CLIENT: Failed to create socket");
@@ -24,7 +25,9 @@ namespace MiniDB {
 
     void Client::connectToServer()
     {
+
         const struct sockaddr_in server_addr = conn->getAddr();
+
         if (connect(conn->getSocket(), reinterpret_cast<const struct sockaddr*>(&server_addr), conn->getAddrLen()) < 0) {
             util::error("CLIENT: Failed to connect to server");
         }
@@ -61,7 +64,7 @@ namespace MiniDB {
         /* Server -- AUTHENTICATES --> Client */
 
         // Receive nonceS from server
-        if (util::receiveRaw(conn, nonceS, sizeof(nonceS)) < 0) {
+        if (util::receiveRaw(conn, nonceS, sizeof(nonceS), running) < 0) {
             util::report(conn, "AUTHENTICATE FAILED: Failed to receive server nonce");
             return false;
         }
@@ -70,13 +73,13 @@ namespace MiniDB {
         crypto_auth_hmacsha512(hash, nonceS, sizeof(nonceS), key);
 
         // Return hash to server
-        if (!util::sendRaw(conn, hash, sizeof(hash))) {
+        if (!util::sendRaw(conn, hash, sizeof(hash), running)) {
             util::report(conn, "AUTHENTICATE FAILED: Could not send HMAC to server");
             return false;
         }
 
         // Receive Acknowledgement
-        util::receiveRaw(conn, ack_msg, sizeof(ack_msg));
+        util::receiveRaw(conn, ack_msg, sizeof(ack_msg), running);
         if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
             util::report(conn, "AUTHENTICATE FAILED: Server could not authenticate client. DB_SECRET is wrong!");
             return false;
@@ -88,13 +91,13 @@ namespace MiniDB {
         randombytes_buf(nonceC, sizeof(nonceC));
 
         // Send to server
-        if (!util::sendRaw(conn, nonceC, sizeof(nonceC))) {
+        if (!util::sendRaw(conn, nonceC, sizeof(nonceC), running)) {
             util::report(conn, "AUTHENTICATE FAILED: Could not send client nonce");
             return false;
         }
 
         // Receive Response from server
-        if ( util::receiveRaw(conn, response, sizeof(response)) < 0) {
+        if ( util::receiveRaw(conn, response, sizeof(response), running) < 0) {
             util::report(conn, "AUTHENTICATE FAILED: Failed to receive HMAC from server");
             return false;
         }
@@ -105,14 +108,14 @@ namespace MiniDB {
 
             // Send Failure to Server
             util::report(conn, "AUTHENTICATE FAILED: Client HMAC does NOT match server response.");
-            if (!util::sendRaw(conn, ack_failure, sizeof(ack_failure)))
+            if (!util::sendRaw(conn, ack_failure, sizeof(ack_failure), running))
                 util::report(conn, "Failed to send failure acknowledgement to server");
             return false;
 
         } else {
 
             // Send Success Acknowledgement
-            if (!util::sendRaw(conn, ack_msg, sizeof(ack_msg))) {
+            if (!util::sendRaw(conn, ack_msg, sizeof(ack_msg), running)) {
                 util::report(conn, "AUTHENTICATE FAILED: Client failed to send acknowledgement.");
                 return false;
             }
@@ -143,7 +146,7 @@ namespace MiniDB {
         char msg[6];
         char expected[] = "READY";
 
-        util::receiveRaw(conn, msg, sizeof(msg));
+        util::receiveRaw(conn, msg, sizeof(msg), running);
 
         if (memcmp(msg, expected, sizeof(msg)) == 0) {
             util::report(conn, "Server sent READY Signal, preparing to send traffic...");
@@ -155,7 +158,7 @@ namespace MiniDB {
         char msg[9];
         char expected[] = "RECEIVED";
 
-        util::receiveRaw(conn, msg, sizeof(msg));
+        util::receiveRaw(conn, msg, sizeof(msg), running);
 
         if (memcmp(msg, expected, sizeof(msg)) == 0) {
             util::report(conn, "Server sent RECEIVED Signal, traffic delivered...");
@@ -169,14 +172,14 @@ namespace MiniDB {
         char buffer[msg.size() + 1];
         memcpy(buffer, msg.data(), msg.size() + 1);
 
-        util::sendEncrypted(conn, buffer, sizeof(buffer));
+        util::sendEncrypted(conn, buffer, sizeof(buffer), running);
 
         AwaitServerAcknowledgement();
 
     }
 
     std::string Client::recv_message() const {
-        std::vector<uint8_t>* msg = util::receiveEncrypted(conn);
+        std::vector<uint8_t>* msg = util::receiveEncrypted(conn, running);
         return std::string{msg->begin(), msg->end()};
     }
 

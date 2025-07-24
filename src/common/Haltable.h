@@ -6,7 +6,9 @@
 namespace util {
 
 class Haltable {
-    std::atomic<bool>& running;
+
+    protected:
+        std::atomic<bool>& running;
 
     public:
         explicit Haltable(std::atomic<bool>& running);

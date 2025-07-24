@@ -8,7 +8,7 @@
 #include <mutex>
 #include <set>
 
-#include "Connection.h"
+#include "common/Connection.h"
 
 
 class ConnectionManager {

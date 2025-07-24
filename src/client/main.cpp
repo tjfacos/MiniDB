@@ -1,3 +1,4 @@
+#include <csignal>
 #include <iostream>
 #include <strings.h>
 #include <thread>
@@ -5,8 +6,13 @@
 
 #include "common/constants.h"
 #include "client/Client.h"
+#include "common/util/config.h"
 
-void testClient(std::string secret) {
+std::atomic<bool> is_running;
+
+void startClient(util::DBConfig config) {
+
+    is_running = true;
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500 ));
 
@@ -19,7 +25,7 @@ void testClient(std::string secret) {
     addr.sin_port = htons(DEFAULT_PORT);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    MiniDB::Client client{addr, secret};
+    MiniDB::Client client{addr, config.secret, is_running};
     client.connectToServer();
 
     char msg[] =
@@ -30,7 +36,39 @@ void testClient(std::string secret) {
         "Vivamus et gravida turpis. Aliquam pellentesque suscipit venenatis. Donec tincidunt, lorem at tincidunt imperdiet, nunc justo pulvinar nisl, sit amet finibus massa tortor at mauris. Nam mi erat, lacinia vitae neque sit amet, congue semper augue. Duis vulputate, velit ut rutrum ornare, turpis est tempus tellus, ac sodales nisi mi vel massa. Morbi cursus erat sed ultricies maximus. Vestibulum luctus leo nibh, sit amet placerat dui posuere sed. Donec vestibulum vestibulum tellus eu sagittis."
         "In at sem et arcu pulvinar aliquam in vel tortor. Vestibulum nisl nisl, venenatis nec commodo aliquet, ultrices a erat. Aenean ornare porta dolor, at pellentesque nulla pulvinar ut. In hac habitasse platea dictumst. Phasellus vitae tellus ac massa consectetur commodo. Suspendisse ipsum neque, laoreet a justo non, iaculis pulvinar sem. In volutpat nulla ut dui dignissim ultrices. Morbi ac nulla at nulla laoreet auctor. Nunc libero.";
 
-    std::cout << "Client waiting 10 seconds..." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds( 10 ));
     client.send_message(msg);
+}
+
+void handle_close_signal(int sig) {
+    is_running = false;
+}
+
+int main(int argc, char* argv[]) {
+
+    // Close Signal Handler
+    signal(SIGINT, handle_close_signal);
+
+    // Print intro
+    std::cout << "================== MINI DB CLIENT ==================" << std::endl;
+    std::cout << "Press Ctrl+C to quit." << std::endl;
+
+    // Default arg values
+    std::string config_file_path = DEFAULT_CONFIG_PATH;
+
+    // Load CLI arguments
+    int idx = 1;
+    while (idx < argc) {
+        if (argv[idx] == "--config") {
+            config_file_path = argv[++idx];
+            break;
+        }
+        idx++;
+    }
+
+    // Get database config
+    std::cout << "Loading config from: " << config_file_path << std::endl;
+    util::DBConfig config = util::get_config(config_file_path);
+
+    startClient(config);
+
 }

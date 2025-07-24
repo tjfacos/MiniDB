@@ -8,9 +8,8 @@
 
 #include <sodium.h>
 
-#include "util/logging.h"
-#include "util/networking.h"
-#include "Haltable.h"
+#include "common/util/logging.h"
+#include "common/util/networking.h"
 
 int Server::buildSocket(int port) {
 
@@ -53,11 +52,11 @@ void Server::handleConnection(const Connection *conn) {
     while (this->isRunning()) {
 
         // Send Ready Signal
-        util::sendRaw(conn, READY_ACK, sizeof(READY_ACK));
+        util::sendRaw(conn, READY_ACK, sizeof(READY_ACK), running);
         util::report(conn, "Ready to receive traffic...");
 
-        // Get message from client
-        std::vector<uint8_t>* msg = util::receiveEncrypted(conn);
+        // Get message from client (blocks until message received)
+        std::vector<uint8_t>* msg = util::receiveEncrypted(conn, running);
 
         // Check for a null message
         if (msg == nullptr && util::net_errno == MIMP_DISCONNECT) {
@@ -71,7 +70,7 @@ void Server::handleConnection(const Connection *conn) {
         }
 
         // Send acknowledge signal
-        util::sendRaw(conn, RECEIVED_ACK, sizeof(RECEIVED_ACK));
+        util::sendRaw(conn, RECEIVED_ACK, sizeof(RECEIVED_ACK), running);
         util::report(conn, "Traffic Received and Acknowledged...");
 
         std::cout << "[" << conn->getEndpoint() << "] " << "MESSAGE: " << reinterpret_cast<char *>(msg->data()) << std::endl;
@@ -108,13 +107,13 @@ bool Server::authenticate(const Connection *conn) const {
     randombytes_buf(nonceS, sizeof(nonceS));
 
     // Send to client
-    if (!util::sendRaw(conn, nonceS, sizeof(nonceS))) {
+    if (!util::sendRaw(conn, nonceS, sizeof(nonceS), running)) {
         util::report(conn, "AUTHENTICATE FAILED: Could not send server nonce");
         return false;
     }
 
     // Receive Response from client
-    if (util::receiveRaw(conn, response, sizeof(response)) < 0) {
+    if (util::receiveRaw(conn, response, sizeof(response), running) < 0) {
         util::report(conn, "AUTHENTICATE FAILED: Failed to receive HMAC from client");
         return false;
     }
@@ -125,14 +124,14 @@ bool Server::authenticate(const Connection *conn) const {
 
         // Send Failure Acknowledgement to client
         util::report(conn, "AUTHENTICATE FAILED: Hash of server nonce does NOT match client response.");
-        if (!util::sendRaw(conn, ack_failure, sizeof(ack_failure)))
+        if (!util::sendRaw(conn, ack_failure, sizeof(ack_failure), running))
             util::report(conn, "Failed to send failure acknowledgement to client");
         return false;
 
     } else {
 
         // Send Success Acknowledgement
-        if (!util::sendRaw(conn, ack_success, sizeof(ack_success))) {
+        if (!util::sendRaw(conn, ack_success, sizeof(ack_success), running)) {
             util::report(conn, "AUTHENTICATE FAILED: Server failed to send acknowledgement.");
             return false;
         }
@@ -142,7 +141,7 @@ bool Server::authenticate(const Connection *conn) const {
     /* Client -- AUTHENTICATES --> Server */
 
     // Receive nonceC from client
-    if (util::receiveRaw(conn, nonceC, sizeof(nonceC)) < 0) {
+    if (util::receiveRaw(conn, nonceC, sizeof(nonceC), running) < 0) {
         util::report(conn, "AUTHENTICATE FAILED: Failed to receive client nonce");
         return false;
     }
@@ -151,13 +150,13 @@ bool Server::authenticate(const Connection *conn) const {
     crypto_auth_hmacsha512(hash, nonceC, sizeof(nonceC), key);
 
     // Return hash to client
-    if (!util::sendRaw(conn, hash, sizeof(hash))) {
+    if (!util::sendRaw(conn, hash, sizeof(hash), running)) {
         util::report(conn, "AUTHENTICATE FAILED: Could not send HMAC to client");
         return false;
     }
 
     // Receive Acknowledgement
-    util::receiveRaw(conn, ack_msg, sizeof(ack_msg));
+    util::receiveRaw(conn, ack_msg, sizeof(ack_msg), running);
     if (sodium_memcmp(ack_msg, ack_success, sizeof(ack_success)) != 0) {
         util::report(conn, "AUTHENTICATE FAILED: Client could not authenticate server");
         return false;

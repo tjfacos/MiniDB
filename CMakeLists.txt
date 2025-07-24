@@ -27,9 +27,11 @@ add_executable(MiniDB_server
         src/server/main.cpp
         src/server/Server.h
         src/server/Server.cpp
+        src/server/ConnectionManager.h
+        src/server/ConnectionManager.cpp
 )
 
-target_link_libraries(MiniDB_server PRIVATE MINIDB_common sodium)
+target_link_libraries(MiniDB_server PRIVATE MiniDB_common sodium)
 
 # Client application
 add_executable(MiniDB_client
@@ -38,4 +40,8 @@ add_executable(MiniDB_client
         src/client/Client.cpp
 )
 
-target_link_libraries(MiniDB_client PRIVATE MINIDB_common sodium)
+target_link_libraries(MiniDB_client PRIVATE MiniDB_common sodium)
+
+set_target_properties(MiniDB_server PROPERTIES OUTPUT_NAME "MiniDB_server")
+set_target_properties(MiniDB_client PROPERTIES OUTPUT_NAME "MiniDB_client")
+set_target_properties(MiniDB_common PROPERTIES OUTPUT_NAME "MiniDB_common")

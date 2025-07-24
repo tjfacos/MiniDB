@@ -22,37 +22,45 @@
 
 namespace util {
 
-    bool sendRaw(const Connection *conn, void* buffer, size_t len) {
+    bool sendRaw(const Connection *conn, void* buffer, size_t len, std::atomic<bool> &carry_on) {
 
         size_t offset = 0;
         auto* ptr = static_cast<uint8_t *>(buffer);
 
         do {
 
+            if (!carry_on) {
+                net_errno = MIMP_DISCONNECT;
+                return false;
+            }
 
             auto sent_bytes = send(conn->getSocket(), ptr + offset, len - offset, 0);
 
             // Stop if send didn't work
             if (sent_bytes == -1) {
-                report(conn, "Send failed! Oh bugger...");
+                report(conn, "Send failed!");
                 net_errno = errno;
                 return false;
             }
 
             offset += sent_bytes;
 
-        } while (offset < len);
+        } while (carry_on && offset < len);
 
         return true;
     }
 
-    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t bytes_to_return) {
+    ssize_t receiveRaw(const Connection *conn, void *buffer, size_t bytes_to_return, std::atomic<bool> &carry_on) {
 
         ssize_t offset = 0;
         auto* ptr = static_cast<uint8_t *>(buffer);
 
         do {
 
+            if (!carry_on) {
+                net_errno = MIMP_DISCONNECT;
+                return -1;
+            }
 
             auto recv_bytes
                 = recv(conn->getSocket(), ptr + offset, bytes_to_return - offset, MSG_DONTWAIT);
@@ -82,7 +90,7 @@ namespace util {
         return offset;
     }
 
-    bool sendEncrypted(const Connection *conn, void *buffer, const uint16_t len) {
+    bool sendEncrypted(const Connection *conn, void *buffer, const uint16_t len, std::atomic<bool> &carry_on) {
 
         uint8_t header  [MIMP_HEADER_BYTES              ];
         uint8_t payload [crypto_secretbox_MACBYTES + len];
@@ -121,10 +129,10 @@ namespace util {
         report(conn, "================ SENDING MIMP MESSAGE ================");
 
         // Send message to client
-        return sendRaw(conn, message_buffer, sizeof(message_buffer));
+        return sendRaw(conn, message_buffer, sizeof(message_buffer), carry_on);
     }
 
-    std::vector<uint8_t>* receiveEncrypted(const Connection *conn) {
+    std::vector<uint8_t>* receiveEncrypted(const Connection *conn, std::atomic<bool> &carry_on) {
 
         // Temp buffer for header
         ssize_t recv_bytes;
@@ -132,7 +140,7 @@ namespace util {
         sodium_memzero(header_buff, sizeof(header_buff));
 
         // Get the header
-        recv_bytes = receiveRaw(conn, header_buff, MIMP_HEADER_BYTES);
+        recv_bytes = receiveRaw(conn, header_buff, MIMP_HEADER_BYTES, carry_on);
         if (recv_bytes <= 0) return nullptr;
 
         // Calculate the size of the message data
@@ -143,7 +151,7 @@ namespace util {
         sodium_memzero(payload_buff, sizeof(payload_buff));
 
         // Get the payload
-        recv_bytes = receiveRaw(conn, payload_buff, sizeof(payload_buff));
+        recv_bytes = receiveRaw(conn, payload_buff, sizeof(payload_buff), carry_on);
         if (recv_bytes <= 0) return nullptr;
 
         // Place nonce into a separate buffer
