@@ -4,6 +4,13 @@ MiniDB Project Notes
 ---
 # TODO
 
+1. Start with `Page`, `FileManager`, `DataType`
+2. Build `Schema` and basic `Row` handling
+3. Implement `Table` and `RecordManager` for data files
+4. Create `BTreeNode` and `BPlusTree` for indexes
+5. Build `Index` and `IndexManager` to tie it together
+6. Finally, implement `QueryExecutor` for actual database operations
+
 ---
 
 # Data Types
@@ -16,16 +23,8 @@ MiniDB Project Notes
 | `STRING(n)` | `n`- character string        | `n (1 <= n <= 255)` |
 | `BINARY(n)` | `n` - byte data chunk        | `n (1 <= n <= 255)` |
 
-# Schema Representation
 
 # Data Representation
-
-MiniDB utilises a `db/` directory, with two subdirectories
-
-* `index/`, which stores index files for each table (B+ trees)
-* `data/`, which stores the rows themselves for each table
-
-Both these file types are subdivided into pages.
 
 ## Pages
 
@@ -45,10 +44,24 @@ A page is a `8 KiB / 8192 B` run of data, made up of
   * Bitmap of occupied slots
 * Pages have **slots** of a fixed size. These could be B+ tree nodes, or table rows
 
+## Schema Files
+
+* Each table has a schema file `db/<table_name>/<table_name>.schema`
+* Structure
+```
+[Number of Attributes]
+// For each attribute
+[Length of Attribute Name]
+[Attribute Name]
+[Type]
+[Type Argument (for e.g. STRING or BINARY, this will be the size n)]
+[Flags (e.g. 1 in the first position means value must be unique)]
+```
+
 ## Index Files
 
 * Each attribute in table generates a new index file, by which we can search for rows by this attribute's value
-* The file will be a binary file named `index/<table_name>/<attribute_name>.idx`. 
+* The file will be a binary file named `db/<table_name>/<attr_name>.idx`. 
   * This file grows to handle the size of the B+ tree it stores.
 * The file is structured...
 
@@ -85,7 +98,7 @@ int calculate_degree(int key_size) {
 
 ## Data Files
 
-* `data/<table_name>.dat` stores the rows for `<table_name>`
+* `db/<table_name>/<table_name>.dat` stores the rows for `<table_name>`
 * Structured... 
 ```
 [HEADER PAGE    ]
@@ -97,6 +110,125 @@ int calculate_degree(int key_size) {
 * Header contains
   * The number of pages
   * Bitmap of **full** pages
+
+---
+# Program Structure
+
+# MiniDB Implementation Classes and Processes
+
+Based on your data representation design, here are the key processes/classes you'll need to implement:
+
+## Core Storage Layer
+
+**`Page`** - Represents a single 8KB page
+- Load/save page from/to disk
+- Manage slot allocation using bitmap
+- Handle different page types (header, index, data, overflow)
+
+**`FileManager`** - Handles low-level file I/O
+- Open/close files
+- Read/write specific pages
+- Memory-mapped file access or buffered I/O
+- File growth management
+
+**`BufferPool`** - Manages pages in memory (if not using mmap)
+- Page caching and replacement
+- Pin/unpin pages for active use
+- Dirty page tracking and flushing
+
+## Schema Management
+
+**`Schema`** - Represents table structure
+- Parse `.schema` files
+- Validate data types and constraints
+- Calculate row sizes and slot configurations
+
+**`SchemaManager`** - Manages all table schemas
+- Load schemas on startup
+- Create/modify/drop table schemas
+- Schema validation for operations
+
+## B+ Tree Implementation
+
+**`BPlusTree`** - Main B+ tree interface
+- Search, insert, delete operations
+- Handle duplicate keys with overflow pages
+- Tree traversal and range queries
+
+**`BTreeNode`** - Represents individual tree nodes
+- Internal node vs leaf node handling
+- Key/pointer management
+- Node splitting and merging logic
+
+**`BTreeNodeFactory`** - Creates nodes of appropriate type
+- Determine node type from page data
+- Handle different key sizes and degrees
+
+## Data Management
+
+**`Table`** - Represents a database table
+- Insert/update/delete rows
+- Schema enforcement
+- Integration with indexes
+
+**`Row`** - Represents a single table row
+- Serialize/deserialize to/from binary format
+- Type validation and conversion
+- Handle fixed-size slot formatting
+
+**`RecordManager`** - Manages row storage in data files
+- Free slot allocation in data pages
+- Row insertion and retrieval
+- Garbage collection of deleted rows
+
+## Index Management
+
+**`IndexManager`** - Manages all indexes for a table
+- Create/drop indexes
+- Coordinate updates across multiple indexes
+- Handle index file creation and initialization
+
+**`Index`** - Wrapper around B+ tree for specific attributes
+- Attribute-specific key extraction
+- Duplicate key handling with overflow pages
+- Index maintenance during table operations
+
+## Query Processing
+
+**`QueryExecutor`** - Executes basic operations
+- SELECT with WHERE clauses
+- INSERT, UPDATE, DELETE
+- Join operations (if you implement them)
+
+**`Predicate`** - Represents WHERE clause conditions
+- Evaluate conditions against rows
+- Optimize for index usage
+
+## Utility Classes
+
+**`DataType`** - Handle type system
+- Serialize/deserialize different data types
+- Type validation and conversion
+- Size calculations
+
+**`Pointer`** - Your `[Type][Page][Slot]` structure
+- Navigate between pages and slots
+- Type safety for different pointer targets
+
+**`BitMap`** - Utility for slot and page bitmaps
+- Set/clear/test bits efficiently
+- Find first free slot/page
+
+## Database Engine
+
+**`Database`** - Top-level database interface
+- Open/close database
+- Manage tables and their associated files
+- Coordinate schema, data, and index files
+
+**`Transaction`**
+- Basic transaction boundaries
+- Simple rollback on errors
 
 ---
 # Networking & Authentication
