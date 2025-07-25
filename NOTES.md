@@ -55,7 +55,7 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 [Attribute Name]
 [Type]
 [Type Argument (for e.g. STRING or BINARY, this will be the size n)]
-[Flags (e.g. 1 in the first position means value must be unique)]
+[Bitwise Flags (e.g. 1 = UNIQUE, 2 = NULLABLE, 4 = ...)]
 ```
 
 ## Index Files
