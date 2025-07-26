@@ -25,6 +25,7 @@ class Page {
     unsigned int num_slots{};
 
     uint8_t* bitmap{};
+    size_t   bitmap_size{};
 
     void load_header();
 

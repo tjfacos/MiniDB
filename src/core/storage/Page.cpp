@@ -12,15 +12,15 @@ void Page::load_header() {
 
     type        = data[0];                  // Get type
     slot_size   = data[1] << 8 | data[2];   // Get the size of each slot
+    bitmap = data + HEADER_BASE_SIZE;       // Set bitmap pointer
+
+    unsigned int N_p = (PAGE_SIZE - HEADER_BASE_SIZE) / slot_size;
+
+    // Calculate bitmap size
+    bitmap_size = static_cast<unsigned int>(std::ceil(static_cast<double>(N_p) / 8));
 
     // Calculate Num Slots
-    unsigned int N_p = (PAGE_SIZE - HEADER_BASE_SIZE) / slot_size;
-    auto bitmap_size = static_cast<unsigned int>(std::ceil(static_cast<double>(N_p) / 8));
     num_slots = N_p - bitmap_size;
-
-    // Get bitmap
-    bitmap = new uint8_t[bitmap_size];
-    memcpy(bitmap, data + HEADER_BASE_SIZE, bitmap_size);
 
 }
 
