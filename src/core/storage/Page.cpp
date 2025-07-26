@@ -1,11 +1,28 @@
 #include "Page.h"
 
+#include <cmath>
+#include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
-#include <utility>
 #include <sys/mman.h>
 
 #include "common/util/logging.h"
+
+void Page::load_header() {
+
+    type        = data[0];                  // Get type
+    slot_size   = data[1] << 8 | data[2];   // Get the size of each slot
+
+    // Calculate Num Slots
+    unsigned int N_p = (PAGE_SIZE - HEADER_BASE_SIZE) / slot_size;
+    auto bitmap_size = static_cast<unsigned int>(std::ceil(static_cast<double>(N_p) / 8));
+    num_slots = N_p - bitmap_size;
+
+    // Get bitmap
+    bitmap = new uint8_t[bitmap_size];
+    memcpy(bitmap, data + HEADER_BASE_SIZE, bitmap_size);
+
+}
 
 Page::Page(std::string filePath, int page_n) : filePath(std::move(filePath)), page_no(page_n) {
 
@@ -24,6 +41,8 @@ Page::Page(std::string filePath, int page_n) : filePath(std::move(filePath)), pa
 
     // File descriptor is no longer needed
     close(file);
+
+    load_header();
 }
 
 Page::~Page() {

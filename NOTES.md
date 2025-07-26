@@ -36,13 +36,27 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 [FREE SPACE]
 ```
 
-* The `HEADER` contains
-  * A unique ID (Page Number within this file)
-  * A page type flag
-  * Number of slots
-  * Number of slots being used
-  * Bitmap of occupied slots
 * Pages have **slots** of a fixed size. These could be B+ tree nodes, or table rows
+* The `HEADER` contains
+  * A page type flag (BTree, Overflow, Data) (1 B)
+  * Size of a slot (2 B)
+  * Bitmap of occupied slots
+
+```
+0                   1                   2                   3                   4
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Type Flag        |  Slot Size                            | Padding           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                                               |
+|                                    Bitmap                                     |
+|                                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+* The bitmap allows for **up to 256 slots**
+* **Min. slot size = Header Size = 34 B**
+* **Max. slot size = Page Size - Header Size = 8158 B**
+
 
 ## Schema Files
 
