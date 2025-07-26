@@ -22,6 +22,13 @@ add_library(MiniDB_common STATIC
 
 target_link_libraries(MiniDB_common PRIVATE sodium)
 
+# Core Library
+add_library(MiniDB_core STATIC
+        src/core/storage/Page.cpp
+        src/core/storage/Page.h
+        src/core/util/constants.h
+)
+
 # Database application
 add_executable(MiniDB_server
         src/server/main.cpp

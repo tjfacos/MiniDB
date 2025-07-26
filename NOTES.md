@@ -72,6 +72,7 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 ...
 [INDEX PAGE N]
 ```
+
 * The `HEADER` contains
    * Total number of pages
    * Total number of **index** pages
@@ -92,7 +93,7 @@ int calculate_degree(int key_size) {
 
 * An internal node, in binary, of a B+ tree of degree `d` is structured: `[Ptr 1][Key 1][Ptr 2][Key 2] ... [Key d - 1][Ptr d]`
    * A key is a data value
-   * A pointer refers to another slot in the file, represented as `[Type (Root / Internal / Leaf / Row / Overflow)][Page Number][Slot Number]`
+   * A pointer refers to another slot in the file, represented as `[Flags (IS_NULL / Root / Internal / Leaf / Row / Overflow)][Page Number][Slot Number]`
 * A leaf node, of a degree-`d` tree, is structured: `[Key 1][Ptr 1][Key 2][Ptr 2] ... [Key d - 1][Ptr d - 1][PADDING]`
   * These pointers point to rows or overflow nodes (linked lists in the overflow pages), which are structured `[Key][Ptr]`
 
