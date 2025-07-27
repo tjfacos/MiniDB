@@ -20,7 +20,7 @@ void Page::load_header() {
     bitmap_size = static_cast<unsigned int>(std::ceil(static_cast<double>(N_p) / 8));
 
     // Calculate Num Slots
-    num_slots = N_p - bitmap_size;
+    num_slots = (PAGE_SIZE - HEADER_BASE_SIZE - bitmap_size) / slot_size;
 
 }
 
