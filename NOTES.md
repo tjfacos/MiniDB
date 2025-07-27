@@ -4,13 +4,16 @@ MiniDB Project Notes
 ---
 # TODO
 
+1) Test the `Schema` class
+2) Write Static Method `Schema::create(string table, vector<Attribute> attrs)`
+
+---
 1. Start with `Page`, `FileManager`, `DataType`
 2. Build `Schema` and basic `Row` handling
 3. Implement `Table` and `RecordManager` for data files
 4. Create `BTreeNode` and `BPlusTree` for indexes
 5. Build `Index` and `IndexManager` to tie it together
 6. Finally, implement `QueryExecutor` for actual database operations
-
 ---
 
 # Data Types

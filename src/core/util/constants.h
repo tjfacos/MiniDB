@@ -16,4 +16,25 @@ namespace PAGE {
 
 }
 
+namespace TYPE {
+
+    #define INT_FLAG    1
+    #define FLOAT_FLAG  2
+    #define STRING_FLAG 3
+    #define BINARY_FLAG 4
+    #define BOOL_FLAG   5
+
+    #define INT_SIZE    4
+    #define FLOAT_SIZE  4
+    #define BOOL_SIZE   1
+
+    #define UNIQUE_FLAG     1
+    #define NULLABLE_FLAG   2
+
+}
+
+namespace SCHEMA {
+
+}
+
 #endif //CONSTANTS_H

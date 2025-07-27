@@ -26,15 +26,13 @@ target_link_libraries(MiniDB_common PRIVATE sodium)
 add_library(MiniDB_core STATIC
         src/core/storage/Page.cpp
         src/core/storage/Page.h
-        src/core/util/constants.h
         src/core/storage/BufferPool.cpp
         src/core/storage/BufferPool.h
         src/core/storage/IndexFile.cpp
         src/core/storage/IndexFile.h
         src/core/storage/DataFile.cpp
         src/core/storage/DataFile.h
-        src/core/storage/SchemaFile.cpp
-        src/core/storage/SchemaFile.h
+        src/core/util/constants.h
 )
 
 # Database application
