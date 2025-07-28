@@ -39,9 +39,12 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 [FREE SPACE]
 ```
 
-* Pages have **slots** of a fixed size. These could be B+ tree nodes, or table rows
+A group of `8192` contiguous pages is called a **partition**
+
+### Slotted Pages
+* Pages with **slots** of a fixed size. These could be B+ tree nodes, or table rows
 * The `HEADER` contains
-  * A page type flag (BTree, Overflow, Data) (1 B)
+  * A page type flag (BTree, Overflow, Data, etc.) (1 B)
   * Size of a slot (2 B)
   * Bitmap of occupied slots
 
@@ -55,13 +58,21 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 |                                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
+* To work out the number of slots, as well as the size of the bitmap...
+1) The number of potential slots is `N_p = (PAGE_SIZE - HEADER_BASE_SIZE) / Slot Size = (8192 - 4) / Slot Size`
+2) The number of bitmap bytes is then given by `B = CEIL( N_p / 8 )`
+3) The number of actual slots is then given by `N_a = (PAGE_SIZE - HEADER_BASE_SIZE - B) / Slot Size`
 
-* The bitmap allows for **up to 256 slots**
-* **Min. slot size = Header Size = 34 B**
-* **Max. slot size = Page Size - Header Size = 8158 B**
+### Bitmap Pages
 
+* Index and Data files are designed to be large (`~512 GB` max). Thus, the header pages in these files cannot store a bitmap for the whole file
+* To solve this, the header file bitmap stores a bitmap where each bit represents a **partition**
+* Each partition has a bitmap page, followed by `8191` standard slotted pages
+* The structure is `[Type Flag (Bitmap)][BITMAP ... ]`
 
-## Schema Files
+## Files
+
+### Schema Files
 
 * Each table has a schema file `db/<table_name>/<table_name>.schema`
 * Structure
@@ -75,7 +86,7 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 [Bitwise Flags (e.g. 1 = UNIQUE, 2 = NULLABLE, 4 = ...)]
 ```
 
-## Index Files
+### Index Files
 
 * Each attribute in table generates a new index file, by which we can search for rows by this attribute's value
 * The file will be a binary file named `db/<table_name>/<attr_name>.idx`. 
@@ -114,7 +125,7 @@ int calculate_degree(int key_size) {
 * A leaf node, of a degree-`d` tree, is structured: `[Key 1][Ptr 1][Key 2][Ptr 2] ... [Key d - 1][Ptr d - 1][PADDING]`
   * These pointers point to rows or overflow nodes (linked lists in the overflow pages), which are structured `[Key][Ptr]`
 
-## Data Files
+### Data Files
 
 * `db/<table_name>/<table_name>.dat` stores the rows for `<table_name>`
 * Structured... 
@@ -128,6 +139,17 @@ int calculate_degree(int key_size) {
 * Header contains
   * The number of pages
   * Bitmap of **full** pages
+
+## Pointers
+
+```c++
+struct BasicSlotPointer {
+    uint32_t file_id; // db/<table>/<file>.<id>.<idx/dat>
+    uint16_t partition_id; 
+    uint16_t page_id;
+    uint16_t slot_id;
+};
+```
 
 ---
 # Program Structure
