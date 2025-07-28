@@ -30,7 +30,7 @@ class BufferPool {
 
     public:
 
-    BufferPool(size_t capacity);
+    explicit BufferPool(size_t capacity);
     ~BufferPool();
 
     Page* getPage(const std::string &file, int num);

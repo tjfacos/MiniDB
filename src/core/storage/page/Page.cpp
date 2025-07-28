@@ -7,34 +7,20 @@
 #include <sys/mman.h>
 
 #include "common/util/logging.h"
+#include "core/util/constants.h"
 
-void Page::load_header() {
 
-    type        = data[0];                  // Get type
-    slot_size   = data[1] << 8 | data[2];   // Get the size of each slot
-    bitmap = data + HEADER_BASE_SIZE;       // Set bitmap pointer
-
-    unsigned int N_p = (PAGE_SIZE - HEADER_BASE_SIZE) / slot_size;
-
-    // Calculate bitmap size
-    bitmap_size = static_cast<unsigned int>(std::ceil(static_cast<double>(N_p) / 8));
-
-    // Calculate Num Slots
-    num_slots = (PAGE_SIZE - HEADER_BASE_SIZE - bitmap_size) / slot_size;
-
-}
-
-Page::Page(std::string filePath, int page_n) : filePath(std::move(filePath)), page_no(page_n) {
+Page::Page(std::string filePath, int partition_n, int page_n) : filePath(std::move(filePath)), page_no(page_n) {
 
     // Open file
     int file = open(filePath.c_str(), O_RDWR);
     if (file == -1) util::error("Failed to load page; could not open " + filePath);
 
     // Calculate offset
-    off_t offset = page_n * PAGE_SIZE;
+    off_t offset = page_n * PAGE::PAGE_SIZE;
 
     // Map page data to buffer
-    data = static_cast<uint8_t *>(mmap(nullptr, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, file, offset));
+    data = static_cast<uint8_t *>(mmap(nullptr, PAGE::PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, file, offset));
     if (data == MAP_FAILED) {
         util::error("Failed to load page; could not map " + filePath + " at offset " + std::to_string(offset));
     }
@@ -42,12 +28,13 @@ Page::Page(std::string filePath, int page_n) : filePath(std::move(filePath)), pa
     // File descriptor is no longer needed
     close(file);
 
-    load_header();
+    // Set Page Type
+    type = pageTypeFromFlag[data[0]];
 }
 
 Page::~Page() {
     // Unmap memory
-    if (munmap(data, PAGE_SIZE) == -1) {
+    if (munmap(data, PAGE::PAGE_SIZE) == -1) {
         util::error("Failed to unmap " + filePath);
     }
 }

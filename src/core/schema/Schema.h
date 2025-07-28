@@ -37,11 +37,11 @@ class Schema {
     private:
 
     std::unordered_map<uint8_t, Type> typeOfFlag{
-        {INT_FLAG   , INT   },
-        {FLOAT_FLAG , FLOAT },
-        {STRING_FLAG, STRING},
-        {BINARY_FLAG, BINARY},
-        {BOOL_FLAG  , BOOL  }
+        {TYPE::INT_FLAG   , INT   },
+        {TYPE::FLOAT_FLAG , FLOAT },
+        {TYPE::STRING_FLAG, STRING},
+        {TYPE::BINARY_FLAG, BINARY},
+        {TYPE::BOOL_FLAG  , BOOL  }
     };
 
     std::string table;

@@ -39,9 +39,10 @@ A page is a `8 KiB / 8192 B` run of data, made up of
 [FREE SPACE]
 ```
 
-A group of `8192` contiguous pages is called a **partition**
+A group of `2048` contiguous pages is called a **partition**
 
 ### Slotted Pages
+
 * Pages with **slots** of a fixed size. These could be B+ tree nodes, or table rows
 * The `HEADER` contains
   * A page type flag (BTree, Overflow, Data, etc.) (1 B)
@@ -58,17 +59,22 @@ A group of `8192` contiguous pages is called a **partition**
 |                                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
+
 * To work out the number of slots, as well as the size of the bitmap...
 1) The number of potential slots is `N_p = (PAGE_SIZE - HEADER_BASE_SIZE) / Slot Size = (8192 - 4) / Slot Size`
 2) The number of bitmap bytes is then given by `B = CEIL( N_p / 8 )`
 3) The number of actual slots is then given by `N_a = (PAGE_SIZE - HEADER_BASE_SIZE - B) / Slot Size`
 
-### Bitmap Pages
+### Partition Header Pages
 
-* Index and Data files are designed to be large (`~512 GB` max). Thus, the header pages in these files cannot store a bitmap for the whole file
+* Index and Data files are designed to be large (`~32 GB` max). Thus, it would be inefficient to store a bitmap for the whole file in the header.
 * To solve this, the header file bitmap stores a bitmap where each bit represents a **partition**
-* Each partition has a bitmap page, followed by `8191` standard slotted pages
+* Each partition has a bitmap page, followed by `2047` standard slotted pages
 * The structure is `[Type Flag (Bitmap)][BITMAP ... ]`
+
+### Header Pages
+* Used at the start of files to store metadata
+* Structures are specified below
 
 ## Files
 
@@ -102,14 +108,39 @@ A group of `8192` contiguous pages is called a **partition**
 ```
 
 * The `HEADER` contains
-   * Total number of pages
-   * Total number of **index** pages
-   * Bitmap of overflow vs index pages in the file
-   * Bitmap of **full** index pages
-   * Bitmap of **full** overflow pages
-   * Degree of the B+ Tree
-   * Key size
-   * Pointer to the root of the tree
+    * Page type flag (1 B)
+    * 3 bytes of padding (alignment)
+    * Total number of partitions (4 B)
+    * Bitmap of which partitions have **full index pages**     (and can't have any more pages) (256 B)
+    * Bitmap of which partitions have **full overflow pages**  (and can't have any more pages) (256 B)
+    * Degree of the B+ Tree (2 B)
+    * Key size (2 B)
+    * Pointer to the root of the tree (8 B)
+
+```
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Page Type     |                Padding (3B)                   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     Total Partitions (4B)                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                Full Index Pages Bitmap (256B)                 +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++               Full Overflow Pages Bitmap (256B)               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      B+ Tree Degree (2B)      |        Key Size (2B)          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|                   Root Pointer (8B)                           |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
 * Each page slot (in the standard index pages) contains a B+ Tree node, where the degree is determined by the below function, based on key size
 
 ```c++

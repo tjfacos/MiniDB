@@ -24,15 +24,25 @@ target_link_libraries(MiniDB_common PRIVATE sodium)
 
 # Core Library
 add_library(MiniDB_core STATIC
-        src/core/storage/Page.cpp
-        src/core/storage/Page.h
-        src/core/storage/BufferPool.cpp
-        src/core/storage/BufferPool.h
-        src/core/storage/IndexFile.cpp
-        src/core/storage/IndexFile.h
-        src/core/storage/DataFile.cpp
-        src/core/storage/DataFile.h
+        src/core/storage/page/Page.cpp
+        src/core/storage/page/Page.h
+        src/core/storage/page/BufferPool.cpp
+        src/core/storage/page/BufferPool.h
+        src/core/storage/file/IndexFile.cpp
+        src/core/storage/file/IndexFile.h
+        src/core/storage/file/DataFile.cpp
+        src/core/storage/file/DataFile.h
         src/core/util/constants.h
+        src/core/storage/page/SlottedPage.cpp
+        src/core/storage/page/SlottedPage.h
+        src/core/storage/page/IndexHeaderPage.cpp
+        src/core/storage/page/IndexHeaderPage.h
+        src/core/storage/page/IndexPartitionHeaderPage.cpp
+        src/core/storage/page/IndexPartitionHeaderPage.h
+        src/core/storage/page/DataHeaderPage.cpp
+        src/core/storage/page/DataHeaderPage.h
+        src/core/storage/page/DataPartitionHeaderPage.cpp
+        src/core/storage/page/DataPartitionHeaderPage.h
 )
 
 # Database application

@@ -5,31 +5,45 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+/* Constants pertaining to individual pages within Data and Index files */
 namespace PAGE {
 
     /* 8 KiB Page Size */
-    #define PAGE_SIZE 8192
+    constexpr unsigned int PAGE_SIZE = 8192;
 
     /* One byte for flags, 2 bytes of slot size, 1 byte of padding */
-    #define HEADER_BASE_SIZE 4
+    constexpr unsigned int HEADER_BASE_SIZE = 4;
 
+    constexpr uint8_t DATA_PAGE_FLAG                    = 1;
+    constexpr uint8_t DATA_HEADER_FLAG                  = 2;
+    constexpr uint8_t DATA_PARTITION_HEADER_FLAG        = 3;
+    constexpr uint8_t INDEX_PAGE_FLAG                   = 4;
+    constexpr uint8_t INDEX_HEADER_FLAG                 = 5;
+    constexpr uint8_t INDEX_PARTITION_HEADER_FLAG       = 6;
 
 }
 
+namespace PARTITION {
+
+    constexpr unsigned int PAGES_PER_PARTITION = 2048;
+
+}
+
+/* Constants pertaining to Database/Column data types  */
 namespace TYPE {
 
-    #define INT_FLAG    1
-    #define FLOAT_FLAG  2
-    #define STRING_FLAG 3
-    #define BINARY_FLAG 4
-    #define BOOL_FLAG   5
+    constexpr uint8_t INT_FLAG    = 1;
+    constexpr uint8_t FLOAT_FLAG  = 2;
+    constexpr uint8_t STRING_FLAG = 3;
+    constexpr uint8_t BINARY_FLAG = 4;
+    constexpr uint8_t BOOL_FLAG   = 5;
 
-    #define INT_SIZE    4
-    #define FLOAT_SIZE  4
-    #define BOOL_SIZE   1
+    constexpr uint8_t INT_SIZE    = 4;
+    constexpr uint8_t FLOAT_SIZE  = 4;
+    constexpr uint8_t BOOL_SIZE   = 1;
 
-    #define UNIQUE_FLAG     1
-    #define NULLABLE_FLAG   2
+    constexpr uint8_t UNIQUE_FLAG    = 1;
+    constexpr uint8_t NULLABLE_FLAG  = 2;
 
 }
 

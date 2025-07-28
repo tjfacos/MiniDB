@@ -25,6 +25,7 @@ BufferPool::~BufferPool() {
 }
 
 void BufferPool::moveNodeToFront(LinkedNode *node) {
+
     // Remove Node from current position
     node->prev->next = node->next;
     node->next->prev = node->prev;
@@ -34,19 +35,22 @@ void BufferPool::moveNodeToFront(LinkedNode *node) {
     // Insert behind head
     node->prev->next = node;
     node->next->prev = node;
+
 }
 
 void BufferPool::removeLRU() {
+
     LinkedNode* ptr = back->prev;
     ptr->prev->next = ptr->next;
     ptr->next->prev = ptr->prev;
     identifierToNode.erase(ptr->key);
     delete ptr;
+
 }
 
 Page* BufferPool::getPage(const std::string &file, const int num) {
 
-    std::string key = file + "::" + std::to_string(num);
+    const std::string key = file + "::" + std::to_string(num);
 
     if (identifierToNode.contains(key)) {
         return identifierToNode[key]->val; // Key already exists, return page

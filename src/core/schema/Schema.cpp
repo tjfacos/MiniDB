@@ -46,15 +46,15 @@ Schema::Schema(const std::string &table) : table(table) {
         // Get Attribute Size in Bytes
         uint8_t attr_size;
         switch (attr_type) {
-            case INT    : attr_size = INT_SIZE  ; break;
-            case FLOAT  : attr_size = FLOAT_SIZE; break;
-            case BOOL   : attr_size = BOOL_SIZE ; break;
+            case INT    : attr_size = TYPE::INT_SIZE  ; break;
+            case FLOAT  : attr_size = TYPE::FLOAT_SIZE; break;
+            case BOOL   : attr_size = TYPE::BOOL_SIZE ; break;
             default     : attr_size = arg;
         }
 
         // Get Flags
-        bool is_unique      = flags & UNIQUE_FLAG;
-        bool is_nullable    = flags & NULLABLE_FLAG;
+        bool is_unique      = flags & TYPE::UNIQUE_FLAG;
+        bool is_nullable    = flags & TYPE::NULLABLE_FLAG;
 
         // Construct Attribute
         attributes[i] = Attribute{
