@@ -25,7 +25,8 @@ namespace PAGE {
 
 namespace PARTITION {
 
-    constexpr unsigned int PAGES_PER_PARTITION = 2048;
+    constexpr unsigned int PAGES_PER_PARTITION = 2048   ;
+    constexpr unsigned int BITMAP_SIZE = 256            ;
 
 }
 
@@ -47,7 +48,9 @@ namespace TYPE {
 
 }
 
-namespace SCHEMA {
+namespace INDEX {
+
+    constexpr uint8_t BITMAP_SIZE = 256;
 
 }
 

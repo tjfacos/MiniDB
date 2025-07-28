@@ -43,6 +43,8 @@ add_library(MiniDB_core STATIC
         src/core/storage/page/DataHeaderPage.h
         src/core/storage/page/DataPartitionHeaderPage.cpp
         src/core/storage/page/DataPartitionHeaderPage.h
+        src/core/storage/pointer/Pointer.cpp
+        src/core/storage/pointer/Pointer.h
 )
 
 # Database application
