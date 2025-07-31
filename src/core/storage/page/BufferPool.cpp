@@ -48,7 +48,7 @@ void BufferPool::removeLRU() {
 
 }
 
-Page* BufferPool::getPage(const std::string &file, const int num) {
+Page* BufferPool::getPage(const std::string &file, uint16_t partition, uint16_t num) {
 
     const std::string key = file + "::" + std::to_string(num);
 
@@ -59,7 +59,7 @@ Page* BufferPool::getPage(const std::string &file, const int num) {
     if (identifierToNode.size() == capacity) removeLRU();
 
     // Create New Node for Page
-    auto new_node = new LinkedNode(head, head->next, key, new Page(file, num));
+    auto new_node = new LinkedNode(head, head->next, key, new Page(file, partition, num));
 
     // Insert just behind the head, and add to the map
     new_node->prev->next = new_node;

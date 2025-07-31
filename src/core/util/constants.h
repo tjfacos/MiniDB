@@ -50,7 +50,7 @@ namespace TYPE {
 
 namespace INDEX {
 
-    constexpr uint8_t BITMAP_SIZE = 256;
+    constexpr size_t BITMAP_SIZE = 256;
 
 }
 

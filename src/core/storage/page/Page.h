@@ -22,19 +22,21 @@ public:
     enum PageType {
         IndexPage,
         DataPage,
-        BitmapPage,
         IndexHeader,
-        DataHeader
+        DataHeader,
+        IndexPartitionHeader,
+        DataPartitionHeader
     };
 
 protected:
 
     std::unordered_map<uint8_t, PageType> pageTypeFromFlag{
-            {PAGE::INDEX_PAGE_FLAG  , IndexPage     },
-            {PAGE::DATA_PAGE_FLAG   , DataPage      },
-            {PAGE::INDEX_HEADER_FLAG, IndexHeader   },
-            {PAGE::DATA_HEADER_FLAG , DataHeader    },
-            {PAGE::BITMAP_FLAG      , BitmapPage    }
+            {PAGE::INDEX_PAGE_FLAG                  , IndexPage                 },
+            {PAGE::DATA_PAGE_FLAG                   , DataPage                  },
+            {PAGE::INDEX_HEADER_FLAG                , IndexHeader               },
+            {PAGE::DATA_HEADER_FLAG                 , DataHeader                },
+            {PAGE::INDEX_PARTITION_HEADER_FLAG      , IndexPartitionHeader      },
+            {PAGE::DATA_PARTITION_HEADER_FLAG       , DataPartitionHeader       }
     };
 
     PageType type;

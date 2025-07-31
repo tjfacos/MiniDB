@@ -171,20 +171,20 @@ int calculate_degree(int key_size) {
   * The number of pages
   * Bitmap of **full** pages
 
-## Pointers
+## Pointers and Page Addressing
 
 ```
 0                   1                   2                   3                   4
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  File Number                                                                  |
+|  File Number                          | Partition Number                      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Partition Number                                                             |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Page Number                                                                  |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Slot Number                                                                  |
+|  Page Number                          |  Slot Number                          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
+
+* A page is uniquely identified by the number of the file it's in, as well as it's partition number and page number
+    * Address `[<file>, 0x0000, 0xFFFF]` is reserved, and used to refer to the header page of the file as a whole
+* The slot number uniquely identifies a slot within the page
 
 ---
 # Program Structure

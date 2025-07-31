@@ -4,10 +4,29 @@
 
 #include "Schema.h"
 
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 
 #include "common/util/logging.h"
+
+auto invertMap(const auto& map) {
+    std::unordered_map<Schema::Type, uint8_t> m;
+    for (const auto& pair : map) {
+        m[pair.second] = pair.first;
+    }
+    return m;
+}
+
+std::unordered_map<uint8_t, Schema::Type> typeOfFlag{
+                    {TYPE::INT_FLAG   , Schema::Type::INT   },
+                    {TYPE::FLOAT_FLAG , Schema::Type::FLOAT },
+                    {TYPE::STRING_FLAG, Schema::Type::STRING},
+                    {TYPE::BINARY_FLAG, Schema::Type::BINARY},
+                    {TYPE::BOOL_FLAG  , Schema::Type::BOOL  }
+};
+
+std::unordered_map<Schema::Type, uint8_t> flagOfType = invertMap(typeOfFlag);
 
 Schema::Schema(const std::string &table) : table(table) {
 
@@ -24,6 +43,7 @@ Schema::Schema(const std::string &table) : table(table) {
 
     // Get that many attributes
     attributes.reserve(num_attributes);
+
     for (uint8_t i = 0; i < num_attributes; i++) {
 
         uint8_t size_of_name, type, arg, flags;
@@ -31,10 +51,10 @@ Schema::Schema(const std::string &table) : table(table) {
         // Get Size of Name
         file.read(reinterpret_cast<char *>(&size_of_name), sizeof(uint8_t));
 
-        char attr_name[size_of_name];
+        std::vector<char> buffer(size_of_name);
 
         // Get Name
-        file.read(attr_name, size_of_name);
+        file.read(buffer.data(), size_of_name);
 
         // Get other fields
         file.read(reinterpret_cast<char *>(&type), sizeof(uint8_t));
@@ -42,9 +62,10 @@ Schema::Schema(const std::string &table) : table(table) {
         file.read(reinterpret_cast<char *>(&flags), sizeof(uint8_t));
 
         // Get Attribute Type from enum
-        Type attr_type = typeOfFlag[type];
+        Type attr_type = typeOfFlag.at(type);
 
         // Get Attribute Size in Bytes
+
         uint8_t attr_size;
         switch (attr_type) {
             case INT    : attr_size = TYPE::INT_SIZE  ; break;
@@ -58,13 +79,15 @@ Schema::Schema(const std::string &table) : table(table) {
         bool is_nullable    = flags & TYPE::NULLABLE_FLAG;
 
         // Construct Attribute
-        attributes[i] = Attribute{
-            std::string{attr_name},
+        Attribute attr{
+            std::string{buffer.begin(), buffer.end()},
             attr_type,
             attr_size,
             is_unique,
             is_nullable
         };
+
+        attributes.push_back(attr);
 
     }
 }
@@ -81,22 +104,40 @@ Schema Schema::createSchema(const std::string &table, std::vector<Attribute> &at
     std::filesystem::path table_directory = std::filesystem::path(path).parent_path();
 
     if (!std::filesystem::exists(table_directory)) {
-        std::filesystem::create_directory(table_directory);
+        std::filesystem::create_directories(table_directory);
     }
 
-    std::ofstream file(path.c_str(), std::ofstream::out | std::ofstream::binary);
+    std::ofstream file(path.c_str(), std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 
     if (!file.is_open()) {
         util::error("Failed to create schema file '" + path + "'");
     }
 
-    std::vector<char> contents;
+    std::vector<uint8_t> contents;
+    contents.push_back(attributes.size());
 
     for (Attribute attr : attributes) {
-        contents.push_back(sizeof(attr.name));
+
+        contents.push_back(strlen(attr.name.c_str()));
         contents.insert(contents.end(), attr.name.begin(), attr.name.end());
+        contents.push_back(flagOfType.at(attr.type));
+
+        if (attr.type == Type::STRING || attr.type == Type::BINARY) {
+            contents.push_back(attr.size);
+        } else {
+            contents.push_back(0x00);
+        }
+
+        uint8_t attr_flags = 0;
+        if (attr.is_unique)     attr_flags |= TYPE::UNIQUE_FLAG;
+        if (attr.is_nullable)   attr_flags |= TYPE::NULLABLE_FLAG;
+        contents.push_back(attr_flags);
+
     }
+
+    file.write(reinterpret_cast<char *>(contents.data()), contents.size());
 
     file.close();
 
+    return Schema{table};
 }

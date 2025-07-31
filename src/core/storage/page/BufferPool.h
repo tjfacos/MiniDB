@@ -33,7 +33,7 @@ class BufferPool {
     explicit BufferPool(size_t capacity);
     ~BufferPool();
 
-    Page* getPage(const std::string &file, int num);
+    Page* getPage(const std::string &file, uint16_t partition, uint16_t num);
 
 
 };

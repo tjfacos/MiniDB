@@ -10,10 +10,9 @@
 
 #include "core/util/constants.h"
 
-
 class Schema {
 
-    public:
+public:
 
     enum Type {
         INT,
@@ -34,20 +33,12 @@ class Schema {
 
     };
 
-    private:
-
-    std::unordered_map<uint8_t, Type> typeOfFlag{
-        {TYPE::INT_FLAG   , INT   },
-        {TYPE::FLOAT_FLAG , FLOAT },
-        {TYPE::STRING_FLAG, STRING},
-        {TYPE::BINARY_FLAG, BINARY},
-        {TYPE::BOOL_FLAG  , BOOL  }
-    };
+private:
 
     std::string table;
     std::vector<Attribute> attributes;
 
-    public:
+public:
 
     Schema(const std::string &table);
     ~Schema();
@@ -57,7 +48,5 @@ class Schema {
     static Schema createSchema(const std::string &table, std::vector<Attribute> &attributes);
 
 };
-
-
 
 #endif //SCHEMA_H

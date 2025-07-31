@@ -28,11 +28,6 @@ add_library(MiniDB_core STATIC
         src/core/storage/page/Page.h
         src/core/storage/page/BufferPool.cpp
         src/core/storage/page/BufferPool.h
-        src/core/storage/file/IndexFile.cpp
-        src/core/storage/file/IndexFile.h
-        src/core/storage/file/DataFile.cpp
-        src/core/storage/file/DataFile.h
-        src/core/util/constants.h
         src/core/storage/page/SlottedPage.cpp
         src/core/storage/page/SlottedPage.h
         src/core/storage/page/IndexHeaderPage.cpp
@@ -43,11 +38,25 @@ add_library(MiniDB_core STATIC
         src/core/storage/page/DataHeaderPage.h
         src/core/storage/page/DataPartitionHeaderPage.cpp
         src/core/storage/page/DataPartitionHeaderPage.h
+        src/core/storage/file/IndexFile.cpp
+        src/core/storage/file/IndexFile.h
+        src/core/storage/file/DataFile.cpp
+        src/core/storage/file/DataFile.h
         src/core/storage/pointer/Pointer.cpp
         src/core/storage/pointer/Pointer.h
+        src/core/schema/Schema.h
+        src/core/schema/Schema.cpp
+        src/core/util/constants.h
 )
 
-# Database application
+# Daemon application
+add_executable(MiniDB_daemon
+    src/daemon/main.cpp
+)
+
+target_link_libraries(MiniDB_daemon PRIVATE MiniDB_core MiniDB_common)
+
+# Server application
 add_executable(MiniDB_server
         src/server/main.cpp
         src/server/Server.h
