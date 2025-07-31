@@ -4,6 +4,7 @@
 
 #include "Schema.h"
 
+#include <filesystem>
 #include <fstream>
 
 #include "common/util/logging.h"
@@ -72,4 +73,30 @@ Schema::~Schema() = default;
 
 std::vector<Schema::Attribute> Schema::getAttributes() {
     return attributes;
+}
+
+Schema Schema::createSchema(const std::string &table, std::vector<Attribute> &attributes) {
+
+    std::string path = "db/" + table + "/" + table + ".schema";
+    std::filesystem::path table_directory = std::filesystem::path(path).parent_path();
+
+    if (!std::filesystem::exists(table_directory)) {
+        std::filesystem::create_directory(table_directory);
+    }
+
+    std::ofstream file(path.c_str(), std::ofstream::out | std::ofstream::binary);
+
+    if (!file.is_open()) {
+        util::error("Failed to create schema file '" + path + "'");
+    }
+
+    std::vector<char> contents;
+
+    for (Attribute attr : attributes) {
+        contents.push_back(sizeof(attr.name));
+        contents.insert(contents.end(), attr.name.begin(), attr.name.end());
+    }
+
+    file.close();
+
 }

@@ -4,24 +4,24 @@
 
 #ifndef POINTER_H
 #define POINTER_H
-
+#include <cstdint>
 
 
 class Pointer {
 
-    unsigned int file       ;
-    unsigned int partition  ;
-    unsigned int page       ;
-    unsigned int slot       ;
+    uint16_t file       ;
+    uint16_t partition  ;
+    uint16_t page       ;
+    uint16_t slot       ;
 
 public:
 
-    Pointer(unsigned int file, unsigned int partition, unsigned int page, unsigned int slot);
+    Pointer(uint16_t file, uint16_t partition, uint16_t page, uint16_t slot);
 
-    unsigned int getFile()  const;
-    unsigned int getPart()  const;
-    unsigned int getPage()  const;
-    unsigned int getSlot()  const;
+    uint16_t getFile()  const;
+    uint16_t getPart()  const;
+    uint16_t getPage()  const;
+    uint16_t getSlot()  const;
 
 
 };

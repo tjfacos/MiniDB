@@ -4,20 +4,20 @@
 
 #include "Pointer.h"
 
-Pointer::Pointer(unsigned int file, unsigned int partition, unsigned int page, unsigned int slot) : file(file), partition(partition), page(page), slot(slot) {}
+Pointer::Pointer(uint16_t file, uint16_t partition, uint16_t page, uint16_t slot) : file(file), partition(partition), page(page), slot(slot) {}
 
-unsigned int Pointer::getFile() const {
+uint16_t Pointer::getFile() const {
     return file;
 }
 
-unsigned int Pointer::getPart() const {
+uint16_t Pointer::getPart() const {
     return partition;
 }
 
-unsigned int Pointer::getPage() const {
+uint16_t Pointer::getPage() const {
     return page;
 }
 
-unsigned int Pointer::getSlot() const {
+uint16_t Pointer::getSlot() const {
     return slot;
 }
