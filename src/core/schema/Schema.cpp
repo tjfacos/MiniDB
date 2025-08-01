@@ -9,24 +9,7 @@
 #include <fstream>
 
 #include "common/util/logging.h"
-
-auto invertMap(const auto& map) {
-    std::unordered_map<Schema::Type, uint8_t> m;
-    for (const auto& pair : map) {
-        m[pair.second] = pair.first;
-    }
-    return m;
-}
-
-std::unordered_map<uint8_t, Schema::Type> typeOfFlag{
-                    {TYPE::INT_FLAG   , Schema::Type::INT   },
-                    {TYPE::FLOAT_FLAG , Schema::Type::FLOAT },
-                    {TYPE::STRING_FLAG, Schema::Type::STRING},
-                    {TYPE::BINARY_FLAG, Schema::Type::BINARY},
-                    {TYPE::BOOL_FLAG  , Schema::Type::BOOL  }
-};
-
-std::unordered_map<Schema::Type, uint8_t> flagOfType = invertMap(typeOfFlag);
+#include "core/util/helpers.h"
 
 Schema::Schema(const std::string &table) : table(table) {
 

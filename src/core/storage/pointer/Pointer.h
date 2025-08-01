@@ -6,26 +6,29 @@
 #define POINTER_H
 #include <cstdint>
 
+#include "core/storage/page/Page.h"
 
 class Pointer {
 
-    uint16_t file       ;
-    uint16_t partition  ;
-    uint16_t page       ;
-    uint16_t slot       ;
+    Page::PageType  type        ;
+    uint16_t        file        ;
+    uint16_t        partition   ;
+    uint16_t        page        ;
+    uint16_t        slot        ;
 
 public:
 
-    Pointer(uint16_t file, uint16_t partition, uint16_t page, uint16_t slot);
+    Pointer(Page::PageType type, uint16_t file, uint16_t partition, uint16_t page, uint16_t slot);
 
-    uint16_t getFile()  const;
-    uint16_t getPart()  const;
-    uint16_t getPage()  const;
-    uint16_t getSlot()  const;
+    [[nodiscard]] Page::PageType    getType() const;
+    [[nodiscard]] uint16_t          getFile() const;
+    [[nodiscard]] uint16_t          getPart() const;
+    [[nodiscard]] uint16_t          getPage() const;
+    [[nodiscard]] uint16_t          getSlot() const;
 
+    static Pointer *fromBuffer(void *buffer);
+    void toBuffer(void* buffer);
 
 };
-
-
 
 #endif //POINTER_H

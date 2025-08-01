@@ -14,8 +14,8 @@ IndexHeaderPage::IndexHeaderPage(const std::string& file_name) : Page(file_name,
 
     // Load bitmaps
 
-    memcpy(full_idx_pages_bitmap, data + 8, INDEX::BITMAP_SIZE);
-    memcpy(full_ovf_pages_bitmap, data + 8 + INDEX::BITMAP_SIZE, INDEX::BITMAP_SIZE);
+    memcpy(free_idx_pages_bitmap, data + 8, INDEX::BITMAP_SIZE);
+    memcpy(free_ovf_pages_bitmap, data + 8 + INDEX::BITMAP_SIZE, INDEX::BITMAP_SIZE);
 
     // Load B+ Tree degree and Key Size
 
@@ -25,30 +25,19 @@ IndexHeaderPage::IndexHeaderPage(const std::string& file_name) : Page(file_name,
 
     // Load root Pointer
 
-    uint32_t file;
-    uint32_t partition;
-    uint32_t page;
-    uint32_t offset;
-
-    memcpy(&file        , &data[post_bitmaps + 4 ], sizeof(uint32_t));
-    memcpy(&partition   , &data[post_bitmaps + 8 ], sizeof(uint32_t));
-    memcpy(&page        , &data[post_bitmaps + 12], sizeof(uint32_t));
-    memcpy(&offset      , &data[post_bitmaps + 16], sizeof(uint32_t));
-
-    root_pointer = new Pointer(file, partition, page, offset);
-
+    root_pointer = Pointer::fromBuffer(data + post_bitmaps + 4);
 }
 
 unsigned int IndexHeaderPage::getTotalPartitions() const {
     return total_partitions;
 }
 
-uint8_t * IndexHeaderPage::getFullIndexPagesBitmap() {
-    return full_idx_pages_bitmap;
+uint8_t * IndexHeaderPage::getFreeIndexPagesBitmap() {
+    return free_idx_pages_bitmap;
 }
 
-uint8_t * IndexHeaderPage::getFullOverflowPagesBitmap() {
-    return full_ovf_pages_bitmap;
+uint8_t * IndexHeaderPage::getFreeOverflowPagesBitmap() {
+    return free_ovf_pages_bitmap;
 }
 
 uint16_t IndexHeaderPage::getBTreeDegree() const {
@@ -59,6 +48,6 @@ uint16_t IndexHeaderPage::getKeySize() const {
     return key_size;
 }
 
-Pointer *IndexHeaderPage::getRootPointer() const {
+Pointer* IndexHeaderPage::getRootPointer() const {
     return root_pointer;
 }

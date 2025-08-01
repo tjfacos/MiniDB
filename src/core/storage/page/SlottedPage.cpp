@@ -24,5 +24,5 @@ SlottedPage::SlottedPage(const std::string& file, int partition_number, int page
 SlottedPage::~SlottedPage() = default;
 
 off_t SlottedPage::getSlotOffset(int slot) const {
-    return (partition_no * PARTITION::PAGES_PER_PARTITION +  page_no) * PAGE::PAGE_SIZE + slot * slot_size;
+    return getPageOffset() + PAGE::HEADER_BASE_SIZE + bitmap_size + slot * slot_size;
 }

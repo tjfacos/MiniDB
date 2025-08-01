@@ -4,10 +4,27 @@
 
 #ifndef INDEXPARTITIONHEADERPAGE_H
 #define INDEXPARTITIONHEADERPAGE_H
+#include <cstdint>
+
+#include "Page.h"
+#include "core/util/constants.h"
 
 
+class IndexPartitionHeaderPage : public Page {
 
-class IndexPartitionHeaderPage {
+    unsigned int total_pages;
+
+    uint8_t free_idx_pages_bitmap[INDEX::BITMAP_SIZE]{}; // Pages with space for B+ Tree nodes
+    uint8_t free_ovf_pages_bitmap[INDEX::BITMAP_SIZE]{}; // Pages with space for overflow nodes
+
+public:
+
+    IndexPartitionHeaderPage(const std::string& file_name);
+    ~IndexPartitionHeaderPage();
+
+    unsigned int getTotalPages();
+    uint8_t* getFreeIndexPagesBitmap();
+    uint8_t* getFreeOverflowPagesBitmap();
 
 };
 

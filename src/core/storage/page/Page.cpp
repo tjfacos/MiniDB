@@ -10,14 +10,14 @@
 #include "core/util/constants.h"
 
 
-Page::Page(std::string filePath, int partition_n, int page_n) : filePath(std::move(filePath)), page_no(page_n) {
+Page::Page(std::string filePath, uint16_t partition_n, uint16_t page_n) : filePath(std::move(filePath)), partition_no(partition_n), page_no(page_n) {
 
     // Open file
     int file = open(filePath.c_str(), O_RDWR);
     if (file == -1) util::error("Failed to load page; could not open " + filePath);
 
     // Calculate offset
-    off_t offset = page_n * PAGE::PAGE_SIZE;
+    off_t offset = getPageOffset();
 
     // Map page data to buffer
     data = static_cast<uint8_t *>(mmap(nullptr, PAGE::PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, file, offset));
@@ -39,7 +39,23 @@ Page::~Page() {
     }
 }
 
-int Page::getNumber() const {
+std::string Page::getFilePath() const {
+    return filePath;
+}
+
+uint16_t Page::getPartition() const {
+    return partition_no;
+}
+
+Page::PageType Page::getType() const {
+    return type;
+}
+
+off_t Page::getPageOffset() const {
+    return (1 + partition_no * PARTITION::PAGES_PER_PARTITION + page_no) * PAGE::PAGE_SIZE;
+}
+
+uint16_t Page::getNumber() const {
     return page_no;
 }
 

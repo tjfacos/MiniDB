@@ -70,7 +70,7 @@ A group of `2048` contiguous pages is called a **partition**
 * Index and Data files are designed to be large (`~32 GB` max). Thus, it would be inefficient to store a bitmap for the whole file in the header.
 * To solve this, the header file bitmap stores a bitmap where each bit represents a **partition**
 * Each partition has a bitmap page, followed by `2047` standard slotted pages
-* The structure is `[Type Flag (Bitmap)][BITMAP ... ]`
+* The structure is `[Type Flag (Bitmap)][1 B Padding][2 B Number of Pages][BITMAP(s) ... ]`
 
 ### Header Pages
 * Used at the start of files to store metadata
@@ -115,7 +115,7 @@ A group of `2048` contiguous pages is called a **partition**
     * Bitmap of which partitions have **full overflow pages**  (and can't have any more pages) (256 B)
     * Degree of the B+ Tree (2 B)
     * Key size (2 B)
-    * Pointer to the root of the tree (8 B)
+    * Pointer to the root of the tree (9 B)
 
 ```
  0                   1                   2                   3
@@ -136,7 +136,7 @@ A group of `2048` contiguous pages is called a **partition**
 |      B+ Tree Degree (2B)      |        Key Size (2B)          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                                                               |
-|                        Root Pointer (16B)                     |
+|                        Root Pointer (9B)                      |
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```

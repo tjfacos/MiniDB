@@ -72,6 +72,8 @@ add_executable(MiniDB_client
         src/client/main.cpp
         src/client/Client.h
         src/client/Client.cpp
+        src/core/util/helpers.h
+        src/core/util/helpers.cpp
 )
 
 target_link_libraries(MiniDB_client PRIVATE MiniDB_common sodium)

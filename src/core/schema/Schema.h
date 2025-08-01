@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "core/util/constants.h"
+#include "core/util/helpers.h"
 
 class Schema {
 
@@ -37,6 +38,16 @@ private:
 
     std::string table;
     std::vector<Attribute> attributes;
+
+    inline static std::unordered_map<uint8_t, Schema::Type> typeOfFlag{
+        {TYPE::INT_FLAG    , INT    },
+        {TYPE::FLOAT_FLAG  , FLOAT  },
+        {TYPE::STRING_FLAG , STRING },
+        {TYPE::BINARY_FLAG , BINARY },
+        {TYPE::BOOL_FLAG   , BOOL   }
+    };
+
+    inline static std::unordered_map<Type, uint8_t> flagOfType = util::invertMap(typeOfFlag);
 
 public:
 

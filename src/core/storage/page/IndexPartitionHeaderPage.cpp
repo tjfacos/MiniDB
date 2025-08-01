@@ -3,3 +3,27 @@
 //
 
 #include "IndexPartitionHeaderPage.h"
+
+#include <cstring>
+
+IndexPartitionHeaderPage::IndexPartitionHeaderPage(const std::string &file_name) : Page(file_name, 0, 0xFFFF) {
+    total_pages = data[2] << 8 | data[3];
+
+    memcpy(free_idx_pages_bitmap, data + 8, INDEX::BITMAP_SIZE);
+    memcpy(free_ovf_pages_bitmap, data + 8 + INDEX::BITMAP_SIZE, INDEX::BITMAP_SIZE);
+
+}
+
+IndexPartitionHeaderPage::~IndexPartitionHeaderPage() = default;
+
+unsigned int IndexPartitionHeaderPage::getTotalPages() {
+    return total_pages;
+}
+
+uint8_t * IndexPartitionHeaderPage::getFreeIndexPagesBitmap() {
+    return free_idx_pages_bitmap;
+}
+
+uint8_t * IndexPartitionHeaderPage::getFreeOverflowPagesBitmap() {
+    return free_ovf_pages_bitmap;
+}

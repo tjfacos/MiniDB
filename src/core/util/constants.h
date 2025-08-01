@@ -54,4 +54,10 @@ namespace INDEX {
 
 }
 
+namespace POINTER {
+
+    constexpr size_t SIZE = 9;
+
+}
+
 #endif //CONSTANTS_H
