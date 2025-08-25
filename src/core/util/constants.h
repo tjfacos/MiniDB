@@ -56,7 +56,7 @@ namespace INDEX {
 
 namespace POINTER {
 
-    constexpr size_t SIZE = 9;
+    constexpr size_t SIZE = 12;
 
 }
 

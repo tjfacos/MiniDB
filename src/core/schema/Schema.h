@@ -4,6 +4,7 @@
 
 #ifndef SCHEMA_H
 #define SCHEMA_H
+
 #include <string>
 #include <unordered_map>
 #include <vector>

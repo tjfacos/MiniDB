@@ -36,7 +36,7 @@ Pointer *Pointer::fromBuffer(void *buffer) {
 
     const auto* ptr = static_cast<uint8_t *>(buffer);
 
-    memcpy(&page_type_flag  , ptr, sizeof(page_type_flag))  ;   ptr += sizeof(page_type_flag);
+    memcpy(&page_type_flag  , ptr, sizeof(page_type_flag))  ;   ptr += sizeof(page_type_flag) + 3; // Padding
     memcpy(&file            , ptr, sizeof(file          ))  ;   ptr += sizeof(file          );
     memcpy(&partition       , ptr, sizeof(partition     ))  ;   ptr += sizeof(partition     );
     memcpy(&page            , ptr, sizeof(page          ))  ;   ptr += sizeof(page          );
@@ -57,10 +57,12 @@ void Pointer::toBuffer(void *buffer) {
     std::vector<uint8_t> src_buff{POINTER::SIZE};
 
     src_buff[0] = Page::pageFlagFromType[type];
-    memcpy(src_buff.data() + 1  , &file     , sizeof(file       ));
-    memcpy(src_buff.data() + 3  , &partition, sizeof(partition  ));
-    memcpy(src_buff.data() + 5  , &page     , sizeof(page       ));
-    memcpy(src_buff.data() + 7  , &slot     , sizeof(slot       ));
+    memset(src_buff.data() + 1, 0, 3); // 3 bytes of padding
+
+    memcpy(src_buff.data() + 4  , &file     , sizeof(file       ));
+    memcpy(src_buff.data() + 6  , &partition, sizeof(partition  ));
+    memcpy(src_buff.data() + 8  , &page     , sizeof(page       ));
+    memcpy(src_buff.data() + 10 , &slot     , sizeof(slot       ));
 
     memcpy(buffer, src_buff.data(), src_buff.size());
 

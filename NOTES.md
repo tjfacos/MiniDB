@@ -4,8 +4,12 @@ MiniDB Project Notes
 ---
 # TODO
 
-1) Test the `Schema` class
-2) Write Static Method `Schema::create(string table, vector<Attribute> attrs)`
+**Next Milestone**: CRUD Operations on a Data File
+
+## Classes to Complete
+* DataHeaderPage
+* DataPartitionHeaderPage
+* **Check Page and SlottedPage**
 
 ---
 1. Start with `Page`, `FileManager`, `DataType`
@@ -175,6 +179,8 @@ int calculate_degree(int key_size) {
 
 ```
 0                   1                   2                   3                   4
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  File Type        |  PADDING                                                  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |  File Number                          | Partition Number                      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
