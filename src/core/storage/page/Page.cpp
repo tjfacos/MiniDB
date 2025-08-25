@@ -53,6 +53,7 @@ Page::PageType Page::getType() const {
 
 off_t Page::getPageOffset() const {
     return (1 + partition_no * PARTITION::PAGES_PER_PARTITION + page_no) * PAGE::PAGE_SIZE;
+    // Accounts for the header, all the prior partitions, and all prior pages in this partition
 }
 
 uint16_t Page::getNumber() const {

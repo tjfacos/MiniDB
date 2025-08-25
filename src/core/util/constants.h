@@ -1,6 +1,3 @@
-//
-// Created by root on 7/26/25.
-//
 
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
@@ -48,11 +45,11 @@ namespace TYPE {
 
 }
 
-namespace INDEX {
-
-    constexpr size_t BITMAP_SIZE = 256;
-
-}
+// namespace INDEX {
+//
+//     constexpr size_t BITMAP_SIZE = 256;
+//
+// }
 
 namespace POINTER {
 

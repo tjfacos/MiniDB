@@ -6,11 +6,12 @@
 
 #include <cstring>
 
-IndexPartitionHeaderPage::IndexPartitionHeaderPage(const std::string &file_name) : Page(file_name, 0, 0xFFFF) {
+IndexPartitionHeaderPage::IndexPartitionHeaderPage(const std::string &file_name, uint16_t partition_number) : Page(file_name, partition_number, 0) {
+
     total_pages = data[2] << 8 | data[3];
 
-    memcpy(free_idx_pages_bitmap, data + 8, INDEX::BITMAP_SIZE);
-    memcpy(free_ovf_pages_bitmap, data + 8 + INDEX::BITMAP_SIZE, INDEX::BITMAP_SIZE);
+    memcpy(free_idx_pages_bitmap, data + 4, PARTITION::BITMAP_SIZE);
+    memcpy(free_ovf_pages_bitmap, data + 4 + PARTITION::BITMAP_SIZE, PARTITION::BITMAP_SIZE);
 
 }
 

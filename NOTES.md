@@ -76,6 +76,17 @@ A group of `2048` contiguous pages is called a **partition**
 * Each partition has a bitmap page, followed by `2047` standard slotted pages
 * The structure is `[Type Flag (Bitmap)][1 B Padding][2 B Number of Pages][BITMAP(s) ... ]`
 
+```
+0                   1                   2                   3                   4
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Type Flag        |  Padding          |  Number of Pages                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                                               |
+|                                    Bitmap(s)                                  |
+|                                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
 ### Header Pages
 * Used at the start of files to store metadata
 * Structures are specified below
